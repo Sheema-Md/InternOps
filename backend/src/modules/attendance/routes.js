@@ -1,4 +1,4 @@
-﻿const auth = require('../../middleware/auth');
+const auth = require('../../middleware/auth');
 const direct = require('../../middleware/directManager');
 const ownership = require('../../middleware/ownership');
 const rbac = require('../../middleware/rbac');
