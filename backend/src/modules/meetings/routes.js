@@ -2,6 +2,7 @@ const auth = require('../../middleware/auth');
 const rbac = require('../../middleware/rbac');
 const repo = require('./repository');
 const { createAuditLog, extractRequestInfo } = require('../../utils/audit');
+const { checkHierarchyAccess } = require('../../utils/hierarchy');
 const { z } = require('zod');
 
 async function routes(fastify) {
@@ -35,7 +36,7 @@ async function routes(fastify) {
   });
 
   // Create meeting
-  fastify.post('/', { preHandler: [auth, rbac('ADMIN','SENIOR_TL','TL')] }, async (req, reply) => {
+  fastify.post('/', { preHandler: [auth, rbac('ADMIN', 'SENIOR_TL', 'TL')] }, async (req, reply) => {
     const schema = z.object({
       title: z.string().min(3),
       description: z.string().optional(),
@@ -47,29 +48,49 @@ async function routes(fastify) {
     });
     const validation = schema.safeParse(req.body);
 
-if (!validation.success) {
-  return reply.status(400).send({
-    error: 'Validation failed',
-    details: validation.error.errors
-  });
-}
+    if (!validation.success) {
+      return reply.status(400).send({
+        error: 'Validation failed',
+        details: validation.error.errors
+      });
+    }
 
-const data = validation.data;
+    const data = validation.data;
     const meeting = await repo.createMeeting({
       ...data,
       createdBy: req.user.id,
     });
+
+    const attendeeResult = {
+      added: [],
+      skipped: []
+    };
+
     if (data.attendeeIds) {
       for (const uid of data.attendeeIds) {
+        if (req.user.role !== 'ADMIN') {
+          const allowed = await checkHierarchyAccess(req.user.id, uid);
+          if (!allowed) {
+            attendeeResult.skipped.push({
+              userId: uid,
+              reason: 'Unauthorized - user is outside your hierarchy'
+            });
+            continue;
+          }
+        }
         await repo.addAttendee(meeting.id, uid);
+        attendeeResult.added.push(uid);
       }
     }
-    await createAuditLog({ userId: req.user.id, action: 'MEETING_CREATED', resourceType: 'meeting', resourceId: meeting.id, ...extractRequestInfo(req) });
-    return reply.status(201).send(meeting);
-  });
 
+    await createAuditLog({ userId: req.user.id, action: 'MEETING_CREATED', resourceType: 'meeting', resourceId: meeting.id, ...extractRequestInfo(req) });
+    return reply.status(201).send({
+      ...meeting,
+      attendeeResult
+    });
+  });
   // Update meeting
-  fastify.patch('/:id', { preHandler: [auth, rbac('ADMIN','SENIOR_TL','TL')] }, async (req, reply) => {
+  fastify.patch('/:id', { preHandler: [auth, rbac('ADMIN', 'SENIOR_TL', 'TL')] }, async (req, reply) => {
     const meeting = await repo.getMeetingById(req.params.id);
     if (!meeting) return reply.status(404).send({ error: 'Not found' });
     if (meeting.created_by !== req.user.id && req.user.role !== 'ADMIN') {
@@ -80,7 +101,7 @@ const data = validation.data;
   });
 
   // Delete meeting (soft)
-  fastify.delete('/:id', { preHandler: [auth, rbac('ADMIN','SENIOR_TL','TL')] }, async (req, reply) => {
+  fastify.delete('/:id', { preHandler: [auth, rbac('ADMIN', 'SENIOR_TL', 'TL')] }, async (req, reply) => {
     const meeting = await repo.getMeetingById(req.params.id);
     if (!meeting) return reply.status(404).send({ error: 'Not found' });
     if (meeting.created_by !== req.user.id && req.user.role !== 'ADMIN') {
@@ -92,19 +113,31 @@ const data = validation.data;
   });
 
   // Add attendee
-  fastify.post('/:id/attendees', { preHandler: [auth, rbac('ADMIN','SENIOR_TL','TL','CAPTAIN')] }, async (req, reply) => {
+  fastify.post('/:id/attendees', { preHandler: [auth, rbac('ADMIN', 'SENIOR_TL', 'TL', 'CAPTAIN')] }, async (req, reply) => {
     const meeting = await repo.getMeetingById(req.params.id);
     if (!meeting) return reply.status(404).send({ error: 'Not found' });
     const { userId } = req.body;
     if (meeting.created_by !== req.user.id && req.user.role !== 'ADMIN') {
       return reply.status(403).send({ error: 'Only creator can add attendees' });
     }
+
+    // Perform hierarchy access check for non-admin users
+    if (req.user.role !== 'ADMIN') {
+      const allowed = await checkHierarchyAccess(req.user.id, userId);
+      if (!allowed) {
+        return reply.status(403).send({
+          error: 'Unauthorized',
+          details: 'Cannot add this user - they are outside your hierarchy'
+        });
+      }
+    }
+
     await repo.addAttendee(req.params.id, userId);
-    return { message: 'Attendee added' };
+    return { message: 'Attendee added', userId };
   });
 
   // Remove attendee
-  fastify.delete('/:id/attendees/:userId', { preHandler: [auth, rbac('ADMIN','SENIOR_TL','TL','CAPTAIN')] }, async (req, reply) => {
+  fastify.delete('/:id/attendees/:userId', { preHandler: [auth, rbac('ADMIN', 'SENIOR_TL', 'TL', 'CAPTAIN')] }, async (req, reply) => {
     const meeting = await repo.getMeetingById(req.params.id);
     if (!meeting) return reply.status(404).send({ error: 'Not found' });
     if (meeting.created_by !== req.user.id && req.user.role !== 'ADMIN') {
@@ -113,6 +146,6 @@ const data = validation.data;
     await repo.removeAttendee(req.params.id, req.params.userId);
     return { message: 'Attendee removed' };
   });
-}
 
+}
 module.exports = routes;
