@@ -12,11 +12,19 @@ function verifyToken(token) {
   const parts = token.split('.');
   if (parts.length !== 2) return false;
   const [raw, sig] = parts;
-  const expected = crypto.createHmac('sha256', SECRET).update(raw).digest('hex');
+  const expected = crypto
+    .createHmac('sha256', SECRET)
+    .update(raw)
+    .digest('hex');
   return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
 }
 
-const EXEMPT = ['/api/auth/login','/api/auth/refresh','/api/auth/forgot-password','/api/auth/reset-password'];
+const EXEMPT = [
+  '/api/auth/login',
+  '/api/auth/refresh',
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
+];
 
 function csrfProtection(fastify, opts, done) {
   fastify.addHook('onRequest', async (request, reply) => {
