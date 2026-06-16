@@ -149,7 +149,15 @@ export default function Tasks() {
                       </a>
                     )}
                     {t.deadline && (
-                      <span>⏰ {new Date(t.deadline).toLocaleString()}</span>
+                      <span>
+                        ⏰{' '}
+                        {new Date(t.deadline).toLocaleString('en-IN', {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                          timeZone: 'Asia/Kolkata',
+                        })}{' '}
+                        IST
+                      </span>
                     )}
                   </div>
                 </div>
