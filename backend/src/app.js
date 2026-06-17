@@ -72,23 +72,20 @@ app.register(require('@fastify/multipart'), {
   },
 });
 
-app.register(require('@fastify/static'), {
-  root: path.join(__dirname, '..', config.uploadDir),
-  prefix: '/uploads/',
-});
-
-app.register(require('@fastify/swagger'), {
-  openapi: {
-    info: {
-      title: 'InternOps API',
-      version: '1.0.0',
+if (process.env.NODE_ENV !== 'test') {
+  app.register(require('@fastify/swagger'), {
+    openapi: {
+      info: {
+        title: 'InternOps API',
+        version: '1.0.0',
+      },
     },
-  },
-});
+  });
 
-app.register(require('@fastify/swagger-ui'), {
-  routePrefix: '/docs',
-});
+  app.register(require('@fastify/swagger-ui'), {
+    routePrefix: '/docs',
+  });
+}
 
 app.register(require('./modules/auth/routes'), {
   prefix: '/api/auth',
@@ -156,6 +153,10 @@ app.register(require('./modules/reports/routes'), {
 
 app.register(require('./modules/reports/export'), {
   prefix: '/api/reports/export',
+});
+
+app.register(require('./modules/ai/routes'), {
+  prefix: '/api/ai',
 });
 
 app.register(require('./modules/uptoskills/routes'), {
