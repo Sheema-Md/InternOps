@@ -12,6 +12,7 @@ function readUser() {
 const useAuthStore = create((set) => ({
   accessToken: localStorage.getItem('accessToken') || null,
   user: readUser(),
+  hydrated: false,
 
   setAuth: ({ accessToken, user }) => {
     if (accessToken) localStorage.setItem('accessToken', accessToken);
@@ -21,6 +22,8 @@ const useAuthStore = create((set) => ({
       user: user ?? s.user,
     }));
   },
+
+  setHydrated: () => set({ hydrated: true }),
 
   logout: () => {
     localStorage.removeItem('accessToken');
