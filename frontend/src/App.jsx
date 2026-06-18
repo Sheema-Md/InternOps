@@ -45,7 +45,9 @@ export default function App() {
   useEffect(() => {
     api
       .post('/auth/refresh')
-      .then((res) => setAuth({ accessToken: res.data.accessToken, user: res.data.user }))
+      .then((res) =>
+        setAuth({ accessToken: res.data.accessToken, user: res.data.user })
+      )
       .catch(() => {})
       .finally(() => setHydrated());
   }, []);
