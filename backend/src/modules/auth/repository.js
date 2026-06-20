@@ -169,7 +169,10 @@ async function claimRefreshToken(tokenHash) {
       end
       return false
     `;
-    const raw = await redis.eval(lua, { keys: [`refresh_token:${tokenHash}`], arguments: [] });
+    const raw = await redis.eval(lua, {
+      keys: [`refresh_token:${tokenHash}`],
+      arguments: [],
+    });
     if (!raw) return null;
     try {
       return JSON.parse(raw).userId;
