@@ -37,17 +37,14 @@ async function routes(fastify) {
   fastify.post('/avatar', { preHandler: [auth] }, async (req, reply) => {
     const data = await req.file();
     if (!data) return reply.status(400).send({ error: 'No file uploaded' });
-    
+
     const ext = path.extname(data.filename || '').toLowerCase();
-    if (
-      !ALLOWED.includes(data.mimetype) ||
-      !ALLOWED_EXTS.includes(ext)
-    ) {
+    if (!ALLOWED.includes(data.mimetype) || !ALLOWED_EXTS.includes(ext)) {
       return reply.status(400).send({ error: 'Unsupported file type' });
     }
 
     const buffer = await data.toBuffer();
-    
+
     // Magic-byte verification — defends against MIME spoofing
     const detectedMime = detectMimeFromBuffer(buffer);
     if (!detectedMime || detectedMime !== data.mimetype) {

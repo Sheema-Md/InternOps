@@ -8,9 +8,9 @@ const { z } = require('zod');
 function formatMeeting(m) {
   if (!m) return null;
   const dateStr = m.meeting_date
-    ? (m.meeting_date instanceof Date
-        ? m.meeting_date.toISOString().split('T')[0]
-        : String(m.meeting_date).split('T')[0])
+    ? m.meeting_date instanceof Date
+      ? m.meeting_date.toISOString().split('T')[0]
+      : String(m.meeting_date).split('T')[0]
     : undefined;
   return {
     ...m,
@@ -71,23 +71,31 @@ async function routes(fastify) {
     '/',
     { preHandler: [auth, rbac('ADMIN', 'SENIOR_TL', 'TL')] },
     async (req, reply) => {
-      const schema = z.object({
-        title: z.string().min(3),
-        description: z.string().optional(),
-        meetingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-        meeting_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-        startTime: z.string().optional(),
-        start_time: z.string().optional(),
-        endTime: z.string().optional(),
-        end_time: z.string().optional(),
-        departmentId: z.string().uuid().optional(),
-        department_id: z.string().uuid().optional(),
-        attendeeIds: z.array(z.string().uuid()).optional(),
-        attendee_ids: z.array(z.string().uuid()).optional(),
-      }).refine((d) => d.meetingDate || d.meeting_date, {
-        message: 'meetingDate or meeting_date is required',
-        path: ['meetingDate'],
-      });
+      const schema = z
+        .object({
+          title: z.string().min(3),
+          description: z.string().optional(),
+          meetingDate: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+          meeting_date: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+          startTime: z.string().optional(),
+          start_time: z.string().optional(),
+          endTime: z.string().optional(),
+          end_time: z.string().optional(),
+          departmentId: z.string().uuid().optional(),
+          department_id: z.string().uuid().optional(),
+          attendeeIds: z.array(z.string().uuid()).optional(),
+          attendee_ids: z.array(z.string().uuid()).optional(),
+        })
+        .refine((d) => d.meetingDate || d.meeting_date, {
+          message: 'meetingDate or meeting_date is required',
+          path: ['meetingDate'],
+        });
 
       const validation = schema.safeParse(req.body);
       if (!validation.success) {
@@ -151,16 +159,24 @@ async function routes(fastify) {
     '/:id',
     { preHandler: [auth, rbac('ADMIN', 'SENIOR_TL', 'TL')] },
     async (req, reply) => {
-      const schema = z.object({
-        title: z.string().min(3).optional(),
-        description: z.string().optional(),
-        meetingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-        meeting_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-        startTime: z.string().optional(),
-        start_time: z.string().optional(),
-        endTime: z.string().optional(),
-        end_time: z.string().optional(),
-      }).strict();
+      const schema = z
+        .object({
+          title: z.string().min(3).optional(),
+          description: z.string().optional(),
+          meetingDate: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+          meeting_date: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+          startTime: z.string().optional(),
+          start_time: z.string().optional(),
+          endTime: z.string().optional(),
+          end_time: z.string().optional(),
+        })
+        .strict();
 
       const validation = schema.safeParse(req.body);
       if (!validation.success) {
@@ -181,7 +197,8 @@ async function routes(fastify) {
 
       const normalized = {};
       if (data.title !== undefined) normalized.title = data.title;
-      if (data.description !== undefined) normalized.description = data.description;
+      if (data.description !== undefined)
+        normalized.description = data.description;
       const mDate = data.meeting_date || data.meetingDate;
       if (mDate !== undefined) normalized.meeting_date = mDate;
       const sTime = data.start_time || data.startTime;
@@ -229,15 +246,19 @@ async function routes(fastify) {
       if (!userId || typeof userId !== 'string') {
         return reply.status(400).send({ error: 'userId is required' });
       }
-      
-      let allowed = meeting.created_by === req.user.id || req.user.role === 'ADMIN';
+
+      let allowed =
+        meeting.created_by === req.user.id || req.user.role === 'ADMIN';
       if (!allowed) {
         allowed = await checkHierarchyAccess(req.user.id, userId);
       }
       if (!allowed) {
         return reply
           .status(403)
-          .send({ error: 'Only creator, admin, or manager of the attendee can add attendees' });
+          .send({
+            error:
+              'Only creator, admin, or manager of the attendee can add attendees',
+          });
       }
 
       // Validate that the target user exists and is not suspended/deleted.
@@ -268,15 +289,19 @@ async function routes(fastify) {
     async (req, reply) => {
       const meeting = await repo.getMeetingById(req.params.id);
       if (!meeting) return reply.status(404).send({ error: 'Not found' });
-      
-      let allowed = meeting.created_by === req.user.id || req.user.role === 'ADMIN';
+
+      let allowed =
+        meeting.created_by === req.user.id || req.user.role === 'ADMIN';
       if (!allowed) {
         allowed = await checkHierarchyAccess(req.user.id, req.params.userId);
       }
       if (!allowed) {
         return reply
           .status(403)
-          .send({ error: 'Only creator, admin, or manager of the attendee can remove attendees' });
+          .send({
+            error:
+              'Only creator, admin, or manager of the attendee can remove attendees',
+          });
       }
 
       await repo.removeAttendee(req.params.id, req.params.userId);
