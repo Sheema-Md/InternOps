@@ -34,6 +34,7 @@ async function routes(fastify) {
 
       try {
         const result = await generateAIResponse({
+          userId: req.user.id,
           messages: finalMessages,
         });
 
