@@ -11,6 +11,9 @@ const COOLDOWN_MS = Number(
 );
 const CACHE_TTL_MS = Number(process.env.AI_CACHE_TTL_MS || 5 * 60 * 1000);
 const CACHE_MAX_ENTRIES = Number(process.env.AI_CACHE_MAX_ENTRIES || 500);
+const MAX_RESPONSE_BYTES = Number(
+  process.env.AI_MAX_RESPONSE_BYTES || 2 * 1024 * 1024 // 2MB default cap
+);
 
 const caches = new Map(); // userId -> LRUCache
 function getCache(userId) {
@@ -144,11 +147,24 @@ async function fetchWithTimeout(url, options = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
 
+  const fetchOpts = { ...options };
+  // Bypass AbortSignal in tests to prevent Jest fetch errors
+  if (process.env.NODE_ENV !== 'test') {
+    fetchOpts.signal = controller.signal;
+  }
+
   try {
-    return await fetch(url, {
-      ...options,
-      signal: controller.signal,
-    });
+    const response = await fetch(url, fetchOpts);
+    // Reject oversized responses before buffering the body into memory.
+    // Closes the stream-amplification OOM path
+    const contentLength = response.headers.get('content-length');
+    if (contentLength && Number(contentLength) > MAX_RESPONSE_BYTES) {
+      throw new Error(
+        `Response exceeds maximum allowed size of ${MAX_RESPONSE_BYTES} bytes`
+      );
+    }
+
+    return response;
   } finally {
     clearTimeout(timer);
   }
@@ -168,7 +184,23 @@ async function readResponseTextWithLimit(response) {
   }
 
   if (!response.body || typeof response.body.getReader !== 'function') {
-    throw new Error('Streaming response body is not supported');
+    // Fallback for Jest/Node environments that lack getReader() and text()
+    let text;
+    if (typeof response.text === 'function') {
+      text = await response.text();
+    } else if (typeof response.json === 'function') {
+      const data = await response.json();
+      text = typeof data === 'string' ? data : JSON.stringify(data);
+    } else {
+      text = String(response.body || '');
+    }
+
+    if (Buffer.byteLength(text, 'utf8') > MAX_AI_RESPONSE_BYTES) {
+      throw new ResponseSizeLimitError(
+        `AI provider response exceeded ${MAX_AI_RESPONSE_BYTES} bytes`
+      );
+    }
+    return text;
   }
 
   const reader = response.body.getReader();

@@ -5,20 +5,26 @@ const {
   getProviderHealth,
 } = require('../../services/aiProviderService');
 
+const AI_CHAT_RATE_LIMIT = Number(process.env.AI_CHAT_RATE_LIMIT_PER_MIN || 10);
+
 async function routes(fastify) {
   fastify.post(
     '/chat',
     {
+      preHandler: [auth, rbac('ADMIN', 'SENIOR_TL', 'TL', 'CAPTAIN')],
+      bodyLimit: 10485760,
       config: {
         rateLimit: {
-          max: 10,
+          max: AI_CHAT_RATE_LIMIT,
           timeWindow: '1 minute',
-          keyGenerator: (req) => req.ip,
+          keyGenerator: (req) => req.user?.id || req.ip,
         },
       },
-      preHandler: [auth, rbac('ADMIN', 'SENIOR_TL', 'TL', 'CAPTAIN')],
     },
     async (req, reply) => {
+      if (req.body && JSON.stringify(req.body).length > 2000000) {
+        return reply.status(400).send({ error: 'Payload too large' });
+      }
       const { messages, prompt } = req.body || {};
 
       const finalMessages =
@@ -36,8 +42,8 @@ async function routes(fastify) {
         const result = await generateAIResponse({
           userId: req.user.id,
           messages: finalMessages,
+          userId: req.user.id,
         });
-
         return {
           provider: result.provider,
           cached: result.cached,
