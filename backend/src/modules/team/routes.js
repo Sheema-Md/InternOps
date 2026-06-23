@@ -3,7 +3,7 @@ const rbac = require('../../middleware/rbac');
 const ownership = require('../../middleware/ownership');
 const requireFreshRole = require('../../middleware/requireFreshRole');
 const repo = require('./repository');
-const {  extractRequestInfo } = require('../../utils/audit');
+const { extractRequestInfo } = require('../../utils/audit');
 const { checkHierarchyAccess, ROLE_RANK } = require('../../utils/hierarchy');
 const { z } = require('zod');
 
