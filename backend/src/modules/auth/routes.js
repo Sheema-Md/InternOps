@@ -50,12 +50,14 @@ async function routes(fastify) {
       const { email, password } = z
         .object({ email: z.string().email(), password: z.string() })
         .parse(req.body);
+
       const result = await service.login(
         email,
         password,
         req.ip,
         req.headers['user-agent']
       );
+
       reply.setCookie('refreshToken', result.refreshToken, {
         httpOnly: true,
         secure: isProduction,
@@ -63,6 +65,15 @@ async function routes(fastify) {
         path: '/api/auth/refresh',
       });
 
+      // From fix/deferred-audit-log-486
+      req.auditOnResponse = {
+        userId: result.user.id,
+        action: 'LOGIN',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      };
+
+      // From master
       const response = {
         accessToken: result.accessToken,
         user: result.user,
@@ -137,8 +148,19 @@ async function routes(fastify) {
       );
 
       reply.clearCookie('refreshToken', { path: '/api/auth/refresh' });
+
+      // From fix/deferred-audit-log-486
+      req.auditOnResponse = {
+        userId: req.user.id,
+        action: 'LOGOUT',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      };
+
+      // From master
       reply.clearCookie('csrf-sid', { path: '/' });
       reply.clearCookie('csrf-token', { path: '/' });
+
       return { message: 'Logged out' };
     }
   );
