@@ -2,6 +2,7 @@
 const rbac = require('../../middleware/rbac');
 const repo = require('./repository');
 const { createAuditLog, extractRequestInfo } = require('../../utils/audit');
+const sessionOwnership = require('../../middleware/sessionOwnership');
 
 async function routes(fastify) {
   // List own sessions
@@ -12,7 +13,7 @@ async function routes(fastify) {
   // Revoke a specific session
   fastify.delete(
     '/me/:sessionId',
-    { preHandler: [auth] },
+    { preHandler: [auth, sessionOwnership('sessionId')] },
     async (req, reply) => {
       const success = await repo.revokeSession(
         req.params.sessionId,
