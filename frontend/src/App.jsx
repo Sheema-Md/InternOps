@@ -24,6 +24,7 @@ import Notices from './pages/admin/Notices';
 import useAuthStore from './store/auth';
 import api from './lib/axios';
 import RoleGuard from './components/RoleGuard';
+import ErrorBoundary from './components/ErrorBoundary';
 
 let bootRefreshPromise = null;
 
@@ -101,92 +102,94 @@ export default function App() {
   }
 
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+    <ErrorBoundary>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* SINGLE LAYOUT WRAPPER FOR ALL AUTHENTICATED PAGES */}
-      <Route
-        path="/"
-        element={
-          <Private>
-            <DashboardLayout />
-          </Private>
-        }
-      >
-        <Route index element={<Navigate to="dashboard" replace />} />
+        {/* SINGLE LAYOUT WRAPPER FOR ALL AUTHENTICATED PAGES */}
+        <Route
+          path="/"
+          element={
+            <Private>
+              <DashboardLayout />
+            </Private>
+          }
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
 
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="tasks" element={<Tasks />} />
-        <Route path="attendance" element={<Attendance />} />
-        <Route path="ratings" element={<Ratings />} />
-        <Route path="meetings" element={<Meetings />} />
-        <Route path="team" element={<Team />} />
-        <Route path="profile" element={<Profile />} />
-        <Route path="sessions" element={<Sessions />} />
-        <Route path="notifications" element={<Notifications />} />
-        <Route path="assistant" element={<InternOpsAssistant />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="tasks" element={<Tasks />} />
+          <Route path="attendance" element={<Attendance />} />
+          <Route path="ratings" element={<Ratings />} />
+          <Route path="meetings" element={<Meetings />} />
+          <Route path="team" element={<Team />} />
+          <Route path="profile" element={<Profile />} />
+          <Route path="sessions" element={<Sessions />} />
+          <Route path="notifications" element={<Notifications />} />
+          <Route path="assistant" element={<InternOpsAssistant />} />
 
-        {/* Admin/Manager Routes */}
-        <Route
-          path="reports"
-          element={
-            <RoleGuard allowedRoles={['ADMIN', 'SENIOR_TL']}>
-              <Reports />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="notices"
-          element={
-            <RoleGuard allowedRoles={['ADMIN', 'SENIOR_TL']}>
-              <Notices />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="analytics"
-          element={
-            <RoleGuard allowedRoles={['ADMIN', 'SENIOR_TL']}>
-              <Analytics />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="exports"
-          element={
-            <RoleGuard allowedRoles={['ADMIN', 'SENIOR_TL']}>
-              <Exports />
-            </RoleGuard>
-          }
-        />
+          {/* Admin/Manager Routes */}
+          <Route
+            path="reports"
+            element={
+              <RoleGuard allowedRoles={['ADMIN', 'SENIOR_TL']}>
+                <Reports />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="notices"
+            element={
+              <RoleGuard allowedRoles={['ADMIN', 'SENIOR_TL']}>
+                <Notices />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="analytics"
+            element={
+              <RoleGuard allowedRoles={['ADMIN', 'SENIOR_TL']}>
+                <Analytics />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="exports"
+            element={
+              <RoleGuard allowedRoles={['ADMIN', 'SENIOR_TL']}>
+                <Exports />
+              </RoleGuard>
+            }
+          />
 
-        <Route
-          path="admin"
-          element={
-            <RoleGuard allowedRoles={['ADMIN']}>
-              <AdminDashboard />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="departments"
-          element={
-            <RoleGuard allowedRoles={['ADMIN']}>
-              <Departments />
-            </RoleGuard>
-          }
-        />
-        <Route
-          path="audit"
-          element={
-            <RoleGuard allowedRoles={['ADMIN']}>
-              <AuditLog />
-            </RoleGuard>
-          }
-        />
-      </Route>
-    </Routes>
+          <Route
+            path="admin"
+            element={
+              <RoleGuard allowedRoles={['ADMIN']}>
+                <AdminDashboard />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="departments"
+            element={
+              <RoleGuard allowedRoles={['ADMIN']}>
+                <Departments />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="audit"
+            element={
+              <RoleGuard allowedRoles={['ADMIN']}>
+                <AuditLog />
+              </RoleGuard>
+            }
+          />
+        </Route>
+      </Routes>
+    </ErrorBoundary>
   );
 }
