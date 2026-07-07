@@ -87,7 +87,10 @@ export function useBulkJobStatus(jobId) {
 export function useAIGenerateContent() {
   return useMutation({
     mutationFn: async (payload) => {
-      const { data } = await api.post('/certificates/ai/generate-content', payload);
+      const { data } = await api.post(
+        '/certificates/ai/generate-content',
+        payload
+      );
       return data;
     },
   });
@@ -96,7 +99,10 @@ export function useAIGenerateContent() {
 export function useAISuggestTemplate() {
   return useMutation({
     mutationFn: async (payload) => {
-      const { data } = await api.post('/certificates/ai/suggest-template', payload);
+      const { data } = await api.post(
+        '/certificates/ai/suggest-template',
+        payload
+      );
       return data;
     },
   });

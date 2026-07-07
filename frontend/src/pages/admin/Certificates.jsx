@@ -79,7 +79,10 @@ export default function Certificates() {
   };
 
   const handleDownload = (cert) => {
-    window.open(cert.download_url || `/api/certificates/${cert.id}/download`, '_blank');
+    window.open(
+      cert.download_url || `/api/certificates/${cert.id}/download`,
+      '_blank'
+    );
   };
 
   return (
@@ -148,7 +151,11 @@ export default function Certificates() {
         <EmptyState
           icon="📜"
           title="No certificates found"
-          text={search ? 'Try a different search term.' : 'Create your first certificate using the button above.'}
+          text={
+            search
+              ? 'Try a different search term.'
+              : 'Create your first certificate using the button above.'
+          }
         />
       ) : (
         <Card className="overflow-hidden">
@@ -191,13 +198,17 @@ export default function Certificates() {
                       </p>
                     </td>
                     <td className="p-4">
-                      <Badge color={TYPE_COLORS[cert.certificate_type] || 'gray'}>
-                        {cert.certificate_type?.charAt(0).toUpperCase() + cert.certificate_type?.slice(1)}
+                      <Badge
+                        color={TYPE_COLORS[cert.certificate_type] || 'gray'}
+                      >
+                        {cert.certificate_type?.charAt(0).toUpperCase() +
+                          cert.certificate_type?.slice(1)}
                       </Badge>
                     </td>
                     <td className="p-4">
                       <Badge color={STATUS_COLORS[cert.status] || 'gray'}>
-                        {cert.status?.charAt(0).toUpperCase() + cert.status?.slice(1)}
+                        {cert.status?.charAt(0).toUpperCase() +
+                          cert.status?.slice(1)}
                       </Badge>
                     </td>
                     <td className="p-4 text-slate-500 dark:text-slate-400">
@@ -409,7 +420,9 @@ function GenerateCertificateModal({
               disabled={templatesLoading}
             >
               <option value="">
-                {templatesLoading ? 'Loading templates...' : 'Select a template (optional)'}
+                {templatesLoading
+                  ? 'Loading templates...'
+                  : 'Select a template (optional)'}
               </option>
               {templates.map((template) => (
                 <option key={template.id} value={template.id}>

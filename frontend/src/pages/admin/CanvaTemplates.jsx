@@ -1,97 +1,121 @@
-import { useState, useEffect } from 'react'
-import { ExternalLink, Download, Palette, Check, X, RefreshCw } from 'lucide-react'
-import { PageHeader, Card, Badge, Spinner } from '../../components/ui'
-import { useCanvaStatus, useCanvaAuthUrl, useCanvaDesigns, useCanvaImport } from '../../hooks/useCanva'
-import { useTemplates, useCreateTemplate, useDeleteTemplate } from '../../hooks/useCertificates'
+import { useState, useEffect } from 'react';
+import {
+  ExternalLink,
+  Download,
+  Palette,
+  Check,
+  X,
+  RefreshCw,
+} from 'lucide-react';
+import { PageHeader, Card, Badge, Spinner } from '../../components/ui';
+import {
+  useCanvaStatus,
+  useCanvaAuthUrl,
+  useCanvaDesigns,
+  useCanvaImport,
+} from '../../hooks/useCanva';
+import {
+  useTemplates,
+  useCreateTemplate,
+  useDeleteTemplate,
+} from '../../hooks/useCertificates';
 
 export default function CanvaTemplates() {
-  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTemplate, setNewTemplate] = useState({
     name: '',
     description: '',
-    colorScheme: ['#3B82F6', '#10B981', '#F59E0B']
-  })
+    colorScheme: ['#3B82F6', '#10B981', '#F59E0B'],
+  });
 
-  const { data: canvaStatusResp, isLoading: statusLoading } = useCanvaStatus()
-  const canvaStatus = canvaStatusResp?.data || {}
-  const { data: authUrlResp } = useCanvaAuthUrl()
-  const authUrlData = authUrlResp?.data || {}
-  const { data: canvaDesignsResp, isLoading: designsLoading, refetch: refetchDesigns } = useCanvaDesigns()
-  const canvaDesigns = canvaDesignsResp?.data || []
-  const { data: templatesResp, isLoading: templatesLoading, refetch: refetchTemplates } = useTemplates()
-  const templates = templatesResp?.data || []
-  const importMutation = useCanvaImport()
-  const createMutation = useCreateTemplate()
-  const deleteMutation = useDeleteTemplate()
+  const { data: canvaStatusResp, isLoading: statusLoading } = useCanvaStatus();
+  const canvaStatus = canvaStatusResp?.data || {};
+  const { data: authUrlResp } = useCanvaAuthUrl();
+  const authUrlData = authUrlResp?.data || {};
+  const {
+    data: canvaDesignsResp,
+    isLoading: designsLoading,
+    refetch: refetchDesigns,
+  } = useCanvaDesigns();
+  const canvaDesigns = canvaDesignsResp?.data || [];
+  const {
+    data: templatesResp,
+    isLoading: templatesLoading,
+    refetch: refetchTemplates,
+  } = useTemplates();
+  const templates = templatesResp?.data || [];
+  const importMutation = useCanvaImport();
+  const createMutation = useCreateTemplate();
+  const deleteMutation = useDeleteTemplate();
 
-  const isConnected = canvaStatus?.connected
+  const isConnected = canvaStatus?.connected;
 
   const handleConnectCanva = () => {
     if (authUrlData?.url) {
-      window.open(authUrlData.url, '_blank', 'width=600,height=700')
+      window.open(authUrlData.url, '_blank', 'width=600,height=700');
     }
-  }
+  };
 
   const handleImportDesign = async (design) => {
     try {
-      await importMutation.mutateAsync(design.id)
-      refetchTemplates()
+      await importMutation.mutateAsync(design.id);
+      refetchTemplates();
     } catch (error) {
-      console.error('Failed to import design:', error)
+      console.error('Failed to import design:', error);
     }
-  }
+  };
 
   const handleCreateTemplate = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     try {
-      await createMutation.mutateAsync(newTemplate)
-      setShowCreateModal(false)
+      await createMutation.mutateAsync(newTemplate);
+      setShowCreateModal(false);
       setNewTemplate({
         name: '',
         description: '',
-        colorScheme: ['#3B82F6', '#10B981', '#F59E0B']
-      })
-      refetchTemplates()
+        colorScheme: ['#3B82F6', '#10B981', '#F59E0B'],
+      });
+      refetchTemplates();
     } catch (error) {
-      console.error('Failed to create template:', error)
+      console.error('Failed to create template:', error);
     }
-  }
+  };
 
   const handleDeleteTemplate = async (templateId) => {
     if (window.confirm('Are you sure you want to delete this template?')) {
       try {
-        await deleteMutation.mutateAsync(templateId)
-        refetchTemplates()
+        await deleteMutation.mutateAsync(templateId);
+        refetchTemplates();
       } catch (error) {
-        console.error('Failed to delete template:', error)
+        console.error('Failed to delete template:', error);
       }
     }
-  }
+  };
 
   const handleSeedDefaults = async () => {
     try {
-      await createMutation.mutateAsync({ seed: true })
-      refetchTemplates()
+      await createMutation.mutateAsync({ seed: true });
+      refetchTemplates();
     } catch (error) {
-      console.error('Failed to seed templates:', error)
+      console.error('Failed to seed templates:', error);
     }
-  }
+  };
 
   const addColorToScheme = () => {
-    const colors = ['#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16']
-    const randomColor = colors[Math.floor(Math.random() * colors.length)]
-    setNewTemplate(prev => ({
+    const colors = ['#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    setNewTemplate((prev) => ({
       ...prev,
-      colorScheme: [...prev.colorScheme, randomColor]
-    }))
-  }
+      colorScheme: [...prev.colorScheme, randomColor],
+    }));
+  };
 
   const removeColorFromScheme = (index) => {
-    setNewTemplate(prev => ({
+    setNewTemplate((prev) => ({
       ...prev,
-      colorScheme: prev.colorScheme.filter((_, i) => i !== index)
-    }))
-  }
+      colorScheme: prev.colorScheme.filter((_, i) => i !== index),
+    }));
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
@@ -313,7 +337,8 @@ export default function CanvaTemplates() {
 
                   <div className="px-4 pb-4">
                     <div className="text-xs text-gray-400 dark:text-gray-500">
-                      Created {new Date(template.createdAt).toLocaleDateString()}
+                      Created{' '}
+                      {new Date(template.createdAt).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
@@ -353,7 +378,12 @@ export default function CanvaTemplates() {
                   <input
                     type="text"
                     value={newTemplate.name}
-                    onChange={(e) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
+                    onChange={(e) =>
+                      setNewTemplate((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="Enter template name"
                     required
@@ -366,7 +396,12 @@ export default function CanvaTemplates() {
                   </label>
                   <textarea
                     value={newTemplate.description}
-                    onChange={(e) => setNewTemplate(prev => ({ ...prev, description: e.target.value }))}
+                    onChange={(e) =>
+                      setNewTemplate((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
                     className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="Enter template description"
                     rows={3}
@@ -384,9 +419,12 @@ export default function CanvaTemplates() {
                           type="color"
                           value={color}
                           onChange={(e) => {
-                            const newColors = [...newTemplate.colorScheme]
-                            newColors[index] = e.target.value
-                            setNewTemplate(prev => ({ ...prev, colorScheme: newColors }))
+                            const newColors = [...newTemplate.colorScheme];
+                            newColors[index] = e.target.value;
+                            setNewTemplate((prev) => ({
+                              ...prev,
+                              colorScheme: newColors,
+                            }));
                           }}
                           className="w-10 h-10 rounded-lg cursor-pointer border-2 border-gray-200 dark:border-gray-600"
                         />
@@ -419,7 +457,9 @@ export default function CanvaTemplates() {
                   </button>
                   <button
                     type="submit"
-                    disabled={createMutation.isPending || !newTemplate.name.trim()}
+                    disabled={
+                      createMutation.isPending || !newTemplate.name.trim()
+                    }
                     className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {createMutation.isPending ? (
@@ -438,5 +478,5 @@ export default function CanvaTemplates() {
         </div>
       )}
     </div>
-  )
+  );
 }

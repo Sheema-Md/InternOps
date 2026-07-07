@@ -9,11 +9,7 @@ const execFile = promisify(require('child_process').execFile);
 
 async function callPythonEndpoint(endpoint, data, method = 'POST') {
   return new Promise((resolve, reject) => {
-    const curlCommand = [
-      'curl',
-      '-s',
-      '-X', method,
-    ];
+    const curlCommand = ['curl', '-s', '-X', method];
 
     // Only send body for POST/PUT/PATCH
     if (method !== 'GET' && method !== 'HEAD') {
@@ -23,19 +19,26 @@ async function callPythonEndpoint(endpoint, data, method = 'POST') {
 
     curlCommand.push(`http://localhost:8080${endpoint}`);
 
-    execFile('curl', curlCommand.slice(1), { timeout: 30000 }, (error, stdout, stderr) => {
-      if (error) {
-        reject(new Error(`Python server call failed: ${error.message}`));
-        return;
-      }
+    execFile(
+      'curl',
+      curlCommand.slice(1),
+      { timeout: 30000 },
+      (error, stdout, stderr) => {
+        if (error) {
+          reject(new Error(`Python server call failed: ${error.message}`));
+          return;
+        }
 
-      try {
-        const result = JSON.parse(stdout);
-        resolve(result);
-      } catch (parseError) {
-        reject(new Error(`Failed to parse Python server response: ${stdout}`));
+        try {
+          const result = JSON.parse(stdout);
+          resolve(result);
+        } catch (parseError) {
+          reject(
+            new Error(`Failed to parse Python server response: ${stdout}`)
+          );
+        }
       }
-    });
+    );
   });
 }
 
@@ -85,7 +88,7 @@ async function generateAchievementStatement(data) {
   } catch (error) {
     // Fallback to AI provider service
     const aiProvider = require('../../services/aiProviderService');
-    
+
     const prompt = `Generate a professional achievement statement for:
 Recipient: ${data.recipient_name}
 Recognition Type: ${data.recognition_type}
@@ -117,7 +120,7 @@ async function generateContent(data) {
   } catch (error) {
     // Fallback to AI provider service
     const aiProvider = require('../../services/aiProviderService');
-    
+
     const prompt = `Generate ${data.content_type} content with ${data.tone} tone:
 ${data.prompt}
 
@@ -155,7 +158,7 @@ async function matchTemplate(data) {
     // Fallback to AI provider service
     const aiProvider = require('../../services/aiProviderService');
     const repo = require('../certificates/repository');
-    
+
     const templates = await repo.getTemplates({ limit: 10 });
     const templateNames = templates.map((t) => t.name).join(', ');
 
@@ -167,12 +170,12 @@ Which template would be most appropriate? Return just the template name.`;
     try {
       const result = await aiProvider.generate(prompt);
       const matched = templates.find((t) => result.includes(t.name));
-      return { 
+      return {
         best_match: matched || templates[0],
         top_3: templates.slice(0, 3),
       };
     } catch (aiError) {
-      return { 
+      return {
         best_match: templates[0],
         top_3: templates.slice(0, 3),
       };
@@ -186,32 +189,47 @@ Which template would be most appropriate? Return just the template name.`;
 
 async function renderCertificatePNG(data) {
   try {
-    const result = await callPythonEndpoint(`/api/certificate-png?name=${encodeURIComponent(data.name)}&task=${encodeURIComponent(data.task)}`, {}, 'GET');
+    const result = await callPythonEndpoint(
+      `/api/certificate-png?name=${encodeURIComponent(data.name)}&task=${encodeURIComponent(data.task)}`,
+      {},
+      'GET'
+    );
     return result;
   } catch (error) {
     // Fallback to PDF generation
     const { generateCertificatePDF } = require('../certificates/pdf');
     const { generateQRCodeDataURL } = require('../certificates/qr');
-    
-    const pdfBuffer = await generateCertificatePDF({
-      recipientName: data.name,
-      title: data.task,
-      body: `This is to certify that ${data.name} has successfully completed ${data.task}`,
-      issuer: 'InternOps',
-      issueDate: new Date().toISOString().slice(0, 10),
-      certificateType: data.task,
-    }, {});
+
+    const pdfBuffer = await generateCertificatePDF(
+      {
+        recipientName: data.name,
+        title: data.task,
+        body: `This is to certify that ${data.name} has successfully completed ${data.task}`,
+        issuer: 'InternOps',
+        issueDate: new Date().toISOString().slice(0, 10),
+        certificateType: data.task,
+      },
+      {}
+    );
 
     const verifyUrl = `${process.env.APP_URL || 'http://localhost:5173'}/verify/certificate`;
     const qrCodeUrl = await generateQRCodeDataURL(verifyUrl);
 
     const filename = `cert_ai_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.pdf`;
-    const filePath = path.join(__dirname, '..', '..', '..', 'uploads', 'certificates', filename);
-    
+    const filePath = path.join(
+      __dirname,
+      '..',
+      '..',
+      '..',
+      'uploads',
+      'certificates',
+      filename
+    );
+
     if (!fs.existsSync(path.dirname(filePath))) {
       fs.mkdirSync(path.dirname(filePath), { recursive: true });
     }
-    
+
     fs.writeFileSync(filePath, pdfBuffer);
 
     return {
@@ -295,14 +313,17 @@ async function runFullPipeline(data) {
 
 async function startBulkAIGeneration(data, userId) {
   const repo = require('../certificates/repository');
-  
-  const job = await repo.createBulkJob({
-    template_id: data.template_id,
-    total_count: data.certificates.length,
-    send_email: data.send_email,
-    email_subject: data.email_subject,
-    email_body: data.email_body,
-  }, userId);
+
+  const job = await repo.createBulkJob(
+    {
+      template_id: data.template_id,
+      total_count: data.certificates.length,
+      send_email: data.send_email,
+      email_subject: data.email_subject,
+      email_body: data.email_body,
+    },
+    userId
+  );
 
   const results = { generated: 0, failed: 0, errors: [] };
 
@@ -316,20 +337,23 @@ async function startBulkAIGeneration(data, userId) {
         desired_tone: certData.tone || 'Professional',
       });
 
-      const cert = await require('../certificates/service').generateCertificate({
-        template_id: data.template_id,
-        recipient_name: certData.recipient_name,
-        recipient_email: certData.recipient_email,
-        title: certData.title || 'Certificate of Achievement',
-        body: aiContent.statement,
-        issuer: certData.issuer,
-        certificate_type: certData.certificate_type || 'achievement',
-        metadata: {
-          ...certData.metadata,
-          ai_generated: true,
-          ai_statement: aiContent.statement,
+      const cert = await require('../certificates/service').generateCertificate(
+        {
+          template_id: data.template_id,
+          recipient_name: certData.recipient_name,
+          recipient_email: certData.recipient_email,
+          title: certData.title || 'Certificate of Achievement',
+          body: aiContent.statement,
+          issuer: certData.issuer,
+          certificate_type: certData.certificate_type || 'achievement',
+          metadata: {
+            ...certData.metadata,
+            ai_generated: true,
+            ai_statement: aiContent.statement,
+          },
         },
-      }, userId);
+        userId
+      );
 
       await repo.createBulkJobItem({
         bulk_job_id: job.id,
@@ -388,7 +412,13 @@ async function getBulkAIJobStatus(id) {
 // Tone Customizer (from toneCustomizer.js)
 // ============================================================
 
-const AVAILABLE_TONES = ['Professional', 'Formal', 'Friendly', 'Motivational', 'Casual'];
+const AVAILABLE_TONES = [
+  'Professional',
+  'Formal',
+  'Friendly',
+  'Motivational',
+  'Casual',
+];
 
 async function generateWithTone(data) {
   const aiProvider = require('../../services/aiProviderService');
@@ -404,7 +434,10 @@ Return ONLY a JSON object with keys: "title", "body", "closing". No extra text.`
 
   try {
     const result = await aiProvider.generate(prompt);
-    const cleanText = result.replace(/```json/g, '').replace(/```/g, '').trim();
+    const cleanText = result
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
     return { tone: data.tone, ...JSON.parse(cleanText) };
   } catch {
     const fallbacks = {
@@ -434,7 +467,10 @@ Return ONLY a JSON object with keys: "title", "body", "closing". No extra text.`
         closing: 'Nice work!',
       },
     };
-    return { tone: data.tone, ...(fallbacks[data.tone] || fallbacks.Professional) };
+    return {
+      tone: data.tone,
+      ...(fallbacks[data.tone] || fallbacks.Professional),
+    };
   }
 }
 
@@ -443,9 +479,21 @@ Return ONLY a JSON object with keys: "title", "body", "closing". No extra text.`
 // ============================================================
 
 const SUPPORTED_LANGUAGES = [
-  'English', 'Hindi', 'Tamil', 'Telugu', 'Malayalam', 'Kannada',
-  'Bengali', 'Marathi', 'Gujarati', 'French', 'Spanish', 'Arabic',
-  'German', 'Japanese', 'Chinese (Simplified)',
+  'English',
+  'Hindi',
+  'Tamil',
+  'Telugu',
+  'Malayalam',
+  'Kannada',
+  'Bengali',
+  'Marathi',
+  'Gujarati',
+  'French',
+  'Spanish',
+  'Arabic',
+  'German',
+  'Japanese',
+  'Chinese (Simplified)',
 ];
 
 async function generateInLanguage(data) {
@@ -461,7 +509,10 @@ Return ONLY a JSON object with keys: "title", "body", "closing", "language". No 
 
   try {
     const result = await aiProvider.generate(prompt);
-    const cleanText = result.replace(/```json/g, '').replace(/```/g, '').trim();
+    const cleanText = result
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
     return { language: data.language, ...JSON.parse(cleanText) };
   } catch {
     return {
@@ -479,46 +530,326 @@ Return ONLY a JSON object with keys: "title", "body", "closing", "language". No 
 
 function getDesignTemplates() {
   return [
-    { name: 'Royal Gold', emoji: '👑', style: 'Formal & Prestigious', colors: 'Navy + Gold', font: 'Georgia, serif', best_for: ['Academic', 'Award', 'Graduation'] },
-    { name: 'Ivory Scroll', emoji: '📜', style: 'Classic & Timeless', colors: 'Ivory + Sepia + Brown', font: 'Palatino Linotype, serif', best_for: ['Academic', 'Historical', 'Literature'] },
-    { name: 'Oxford Blue', emoji: '🎓', style: 'University & Academic', colors: 'Oxford Blue + Cream + Silver', font: 'Book Antiqua, serif', best_for: ['Graduation', 'Degree', 'University'] },
-    { name: 'Emerald Honor', emoji: '🏅', style: 'Honor & Excellence', colors: 'Emerald Green + Gold + White', font: 'Garamond, serif', best_for: ['Honor Roll', 'Excellence', 'Award'] },
-    { name: 'Crimson Prestige', emoji: '🎖️', style: 'Prestige & Authority', colors: 'Crimson + Black + Gold', font: 'Times New Roman, serif', best_for: ['Award', 'Leadership', 'Excellence'] },
-    { name: 'Modern Minimal', emoji: '🏢', style: 'Clean & Professional', colors: 'White + Charcoal + Blue', font: 'Trebuchet MS, sans-serif', best_for: ['Corporate', 'Training', 'Internship'] },
-    { name: 'Slate Executive', emoji: '💼', style: 'Executive & Corporate', colors: 'Slate Grey + White + Teal', font: 'Verdana, sans-serif', best_for: ['Corporate', 'Executive', 'Management'] },
-    { name: 'Carbon Pro', emoji: '⚙️', style: 'Industrial & Bold', colors: 'Carbon Black + Orange + White', font: 'Impact, sans-serif', best_for: ['Engineering', 'Manufacturing', 'Technical'] },
-    { name: 'Navy Corporate', emoji: '🔷', style: 'Trustworthy & Professional', colors: 'Navy + White + Gold Accent', font: 'Calibri, sans-serif', best_for: ['Finance', 'Banking', 'Corporate'] },
-    { name: 'Pearl White', emoji: '🤍', style: 'Ultra-Clean Minimalist', colors: 'Pure White + Black + Thin Gray', font: 'Century Gothic, sans-serif', best_for: ['Professional', 'Corporate', 'Consulting'] },
-    { name: 'Tech Dark', emoji: '💻', style: 'Futuristic & Bold', colors: 'Dark + Cyan + Blue', font: 'Courier New, monospace', best_for: ['Coding', 'Data Science', 'IT'] },
-    { name: 'Matrix Green', emoji: '🟢', style: 'Hacker & Tech', colors: 'Black + Matrix Green', font: 'Lucida Console, monospace', best_for: ['Cybersecurity', 'Hacking', 'Programming'] },
-    { name: 'Neon Purple', emoji: '🔮', style: 'Cyberpunk & Vivid', colors: 'Dark Purple + Neon + Pink', font: 'Trebuchet MS, sans-serif', best_for: ['Gaming', 'Technology', 'Esports'] },
-    { name: 'Circuit Board', emoji: '🔌', style: 'Engineering & PCB', colors: 'PCB Green + Gold Traces', font: 'Courier New, monospace', best_for: ['Electronics', 'Engineering', 'Hardware'] },
-    { name: 'AI Blue', emoji: '🤖', style: 'Artificial Intelligence', colors: 'Electric Blue + White + Dark', font: 'Verdana, sans-serif', best_for: ['AI', 'Machine Learning', 'Data Science'] },
-    { name: 'Floral Pastel', emoji: '🌸', style: 'Elegant & Artistic', colors: 'Blush Pink + Lavender + Gold', font: 'Palatino Linotype, serif', best_for: ['Art', 'Design', 'Music', 'Creative'] },
-    { name: 'Watercolor Blue', emoji: '🎨', style: 'Artistic & Painterly', colors: 'Sky Blue + Soft Teal + White', font: 'Garamond, serif', best_for: ['Art', 'Design', 'Painting'] },
-    { name: 'Sunset Orange', emoji: '🌅', style: 'Warm & Vibrant', colors: 'Sunset Orange + Deep Red + Cream', font: 'Georgia, serif', best_for: ['Photography', 'Art', 'Film'] },
-    { name: 'Vintage Sepia', emoji: '📷', style: 'Retro & Nostalgic', colors: 'Sepia + Warm Brown + Cream', font: 'Palatino Linotype, serif', best_for: ['Photography', 'History', 'Literature'] },
-    { name: 'Art Deco Gold', emoji: '✨', style: 'Art Deco & Glamour', colors: 'Black + Gold + Geometric', font: 'Georgia, serif', best_for: ['Fashion', 'Design', 'Film', 'Architecture'] },
-    { name: 'Nature Green', emoji: '🌿', style: 'Warm & Organic', colors: 'Forest Green + Cream', font: 'Georgia, serif', best_for: ['Environment', 'Community', 'Wellness'] },
-    { name: 'Ocean Breeze', emoji: '🌊', style: 'Coastal & Fresh', colors: 'Ocean Blue + Sandy Beige', font: 'Trebuchet MS, sans-serif', best_for: ['Marine', 'Environment', 'Geography'] },
-    { name: 'Classic Red', emoji: '🏆', style: 'Bold & Authoritative', colors: 'Crimson + White + Gold', font: 'Times New Roman, serif', best_for: ['Sports', 'Competition', 'Award'] },
-    { name: 'Champion Black', emoji: '🥇', style: 'Champion & Elite', colors: 'Black + Gold + Silver', font: 'Impact, sans-serif', best_for: ['Sports', 'Champion', 'Competition'] },
-    { name: 'Sports Green', emoji: '⚽', style: 'Field & Athletic', colors: 'Grass Green + White + Black', font: 'Trebuchet MS, sans-serif', best_for: ['Football', 'Cricket', 'Sports'] },
-    { name: 'Finance Gold', emoji: '💰', style: 'Wealth & Finance', colors: 'Dark + Gold + Forest Green', font: 'Garamond, serif', best_for: ['Finance', 'Banking', 'Accounting'] },
-    { name: 'MBA Maroon', emoji: '📊', style: 'Business School', colors: 'Maroon + Cream + Gold', font: 'Book Antiqua, serif', best_for: ['MBA', 'Business', 'Management'] },
-    { name: 'Startup Orange', emoji: '🚀', style: 'Bold & Disruptive', colors: 'Vibrant Orange + Dark + White', font: 'Trebuchet MS, sans-serif', best_for: ['Startup', 'Entrepreneurship', 'Innovation'] },
-    { name: 'School Spirit', emoji: '🏫', style: 'School Pride', colors: 'Blue + White + Yellow', font: 'Georgia, serif', best_for: ['School', 'Training', 'Workshop'] },
-    { name: 'Chalkboard', emoji: '✏️', style: 'Educational & Playful', colors: 'Chalkboard Green + White Chalk', font: 'Courier New, monospace', best_for: ['Education', 'Teaching', 'Workshop'] },
-    { name: 'Medical Blue', emoji: '🏥', style: 'Clinical & Trusted', colors: 'Medical Blue + White + Clean Grey', font: 'Verdana, sans-serif', best_for: ['Medicine', 'Healthcare', 'Nursing'] },
-    { name: 'Science Lab', emoji: '🔬', style: 'Scientific & Precise', colors: 'Lab White + Deep Blue + Green Signal', font: 'Courier New, monospace', best_for: ['Chemistry', 'Biology', 'Physics'] },
-    { name: 'Astronomy Dark', emoji: '🌌', style: 'Cosmic & Deep', colors: 'Space Black + Starlight + Deep Purple', font: 'Georgia, serif', best_for: ['Astronomy', 'Physics', 'Space'] },
-    { name: 'Harvard Crimson', emoji: '📖', style: 'Ivy League Prestige', colors: 'Harvard Crimson + Black + Gold', font: 'Garamond, serif', best_for: ['Academic', 'Research', 'Degree'] },
-    { name: 'Rose Gold', emoji: '💎', style: 'Premium & Feminine', colors: 'Rose Gold + Blush + Champagne', font: 'Georgia, serif', best_for: ['Award', 'Excellence', 'Fashion'] },
-    { name: 'Holographic', emoji: '🌈', style: 'Futuristic & Iridescent', colors: 'Holographic Gradient + White', font: 'Century Gothic, sans-serif', best_for: ['Innovation', 'Technology', 'Design'] },
-    { name: 'Blueprint', emoji: '📐', style: 'Architectural & Technical', colors: 'Blueprint Blue + White Lines', font: 'Courier New, monospace', best_for: ['Architecture', 'Engineering', 'Design'] },
-    { name: 'Saffron India', emoji: '🇮🇳', style: 'Vibrant & Cultural', colors: 'Saffron + White + India Green', font: 'Georgia, serif', best_for: ['India', 'Culture', 'Government'] },
-    { name: 'Zen Lotus', emoji: '🧘', style: 'Calm & Mindful', colors: 'Soft Lavender + White + Sage', font: 'Garamond, serif', best_for: ['Yoga', 'Meditation', 'Wellness'] },
-    { name: 'Jazz Noir', emoji: '🎷', style: 'Jazz & Cool', colors: 'Noir Black + Warm Amber + Cream', font: 'Georgia, serif', best_for: ['Music', 'Jazz', 'Arts'] },
+    {
+      name: 'Royal Gold',
+      emoji: '👑',
+      style: 'Formal & Prestigious',
+      colors: 'Navy + Gold',
+      font: 'Georgia, serif',
+      best_for: ['Academic', 'Award', 'Graduation'],
+    },
+    {
+      name: 'Ivory Scroll',
+      emoji: '📜',
+      style: 'Classic & Timeless',
+      colors: 'Ivory + Sepia + Brown',
+      font: 'Palatino Linotype, serif',
+      best_for: ['Academic', 'Historical', 'Literature'],
+    },
+    {
+      name: 'Oxford Blue',
+      emoji: '🎓',
+      style: 'University & Academic',
+      colors: 'Oxford Blue + Cream + Silver',
+      font: 'Book Antiqua, serif',
+      best_for: ['Graduation', 'Degree', 'University'],
+    },
+    {
+      name: 'Emerald Honor',
+      emoji: '🏅',
+      style: 'Honor & Excellence',
+      colors: 'Emerald Green + Gold + White',
+      font: 'Garamond, serif',
+      best_for: ['Honor Roll', 'Excellence', 'Award'],
+    },
+    {
+      name: 'Crimson Prestige',
+      emoji: '🎖️',
+      style: 'Prestige & Authority',
+      colors: 'Crimson + Black + Gold',
+      font: 'Times New Roman, serif',
+      best_for: ['Award', 'Leadership', 'Excellence'],
+    },
+    {
+      name: 'Modern Minimal',
+      emoji: '🏢',
+      style: 'Clean & Professional',
+      colors: 'White + Charcoal + Blue',
+      font: 'Trebuchet MS, sans-serif',
+      best_for: ['Corporate', 'Training', 'Internship'],
+    },
+    {
+      name: 'Slate Executive',
+      emoji: '💼',
+      style: 'Executive & Corporate',
+      colors: 'Slate Grey + White + Teal',
+      font: 'Verdana, sans-serif',
+      best_for: ['Corporate', 'Executive', 'Management'],
+    },
+    {
+      name: 'Carbon Pro',
+      emoji: '⚙️',
+      style: 'Industrial & Bold',
+      colors: 'Carbon Black + Orange + White',
+      font: 'Impact, sans-serif',
+      best_for: ['Engineering', 'Manufacturing', 'Technical'],
+    },
+    {
+      name: 'Navy Corporate',
+      emoji: '🔷',
+      style: 'Trustworthy & Professional',
+      colors: 'Navy + White + Gold Accent',
+      font: 'Calibri, sans-serif',
+      best_for: ['Finance', 'Banking', 'Corporate'],
+    },
+    {
+      name: 'Pearl White',
+      emoji: '🤍',
+      style: 'Ultra-Clean Minimalist',
+      colors: 'Pure White + Black + Thin Gray',
+      font: 'Century Gothic, sans-serif',
+      best_for: ['Professional', 'Corporate', 'Consulting'],
+    },
+    {
+      name: 'Tech Dark',
+      emoji: '💻',
+      style: 'Futuristic & Bold',
+      colors: 'Dark + Cyan + Blue',
+      font: 'Courier New, monospace',
+      best_for: ['Coding', 'Data Science', 'IT'],
+    },
+    {
+      name: 'Matrix Green',
+      emoji: '🟢',
+      style: 'Hacker & Tech',
+      colors: 'Black + Matrix Green',
+      font: 'Lucida Console, monospace',
+      best_for: ['Cybersecurity', 'Hacking', 'Programming'],
+    },
+    {
+      name: 'Neon Purple',
+      emoji: '🔮',
+      style: 'Cyberpunk & Vivid',
+      colors: 'Dark Purple + Neon + Pink',
+      font: 'Trebuchet MS, sans-serif',
+      best_for: ['Gaming', 'Technology', 'Esports'],
+    },
+    {
+      name: 'Circuit Board',
+      emoji: '🔌',
+      style: 'Engineering & PCB',
+      colors: 'PCB Green + Gold Traces',
+      font: 'Courier New, monospace',
+      best_for: ['Electronics', 'Engineering', 'Hardware'],
+    },
+    {
+      name: 'AI Blue',
+      emoji: '🤖',
+      style: 'Artificial Intelligence',
+      colors: 'Electric Blue + White + Dark',
+      font: 'Verdana, sans-serif',
+      best_for: ['AI', 'Machine Learning', 'Data Science'],
+    },
+    {
+      name: 'Floral Pastel',
+      emoji: '🌸',
+      style: 'Elegant & Artistic',
+      colors: 'Blush Pink + Lavender + Gold',
+      font: 'Palatino Linotype, serif',
+      best_for: ['Art', 'Design', 'Music', 'Creative'],
+    },
+    {
+      name: 'Watercolor Blue',
+      emoji: '🎨',
+      style: 'Artistic & Painterly',
+      colors: 'Sky Blue + Soft Teal + White',
+      font: 'Garamond, serif',
+      best_for: ['Art', 'Design', 'Painting'],
+    },
+    {
+      name: 'Sunset Orange',
+      emoji: '🌅',
+      style: 'Warm & Vibrant',
+      colors: 'Sunset Orange + Deep Red + Cream',
+      font: 'Georgia, serif',
+      best_for: ['Photography', 'Art', 'Film'],
+    },
+    {
+      name: 'Vintage Sepia',
+      emoji: '📷',
+      style: 'Retro & Nostalgic',
+      colors: 'Sepia + Warm Brown + Cream',
+      font: 'Palatino Linotype, serif',
+      best_for: ['Photography', 'History', 'Literature'],
+    },
+    {
+      name: 'Art Deco Gold',
+      emoji: '✨',
+      style: 'Art Deco & Glamour',
+      colors: 'Black + Gold + Geometric',
+      font: 'Georgia, serif',
+      best_for: ['Fashion', 'Design', 'Film', 'Architecture'],
+    },
+    {
+      name: 'Nature Green',
+      emoji: '🌿',
+      style: 'Warm & Organic',
+      colors: 'Forest Green + Cream',
+      font: 'Georgia, serif',
+      best_for: ['Environment', 'Community', 'Wellness'],
+    },
+    {
+      name: 'Ocean Breeze',
+      emoji: '🌊',
+      style: 'Coastal & Fresh',
+      colors: 'Ocean Blue + Sandy Beige',
+      font: 'Trebuchet MS, sans-serif',
+      best_for: ['Marine', 'Environment', 'Geography'],
+    },
+    {
+      name: 'Classic Red',
+      emoji: '🏆',
+      style: 'Bold & Authoritative',
+      colors: 'Crimson + White + Gold',
+      font: 'Times New Roman, serif',
+      best_for: ['Sports', 'Competition', 'Award'],
+    },
+    {
+      name: 'Champion Black',
+      emoji: '🥇',
+      style: 'Champion & Elite',
+      colors: 'Black + Gold + Silver',
+      font: 'Impact, sans-serif',
+      best_for: ['Sports', 'Champion', 'Competition'],
+    },
+    {
+      name: 'Sports Green',
+      emoji: '⚽',
+      style: 'Field & Athletic',
+      colors: 'Grass Green + White + Black',
+      font: 'Trebuchet MS, sans-serif',
+      best_for: ['Football', 'Cricket', 'Sports'],
+    },
+    {
+      name: 'Finance Gold',
+      emoji: '💰',
+      style: 'Wealth & Finance',
+      colors: 'Dark + Gold + Forest Green',
+      font: 'Garamond, serif',
+      best_for: ['Finance', 'Banking', 'Accounting'],
+    },
+    {
+      name: 'MBA Maroon',
+      emoji: '📊',
+      style: 'Business School',
+      colors: 'Maroon + Cream + Gold',
+      font: 'Book Antiqua, serif',
+      best_for: ['MBA', 'Business', 'Management'],
+    },
+    {
+      name: 'Startup Orange',
+      emoji: '🚀',
+      style: 'Bold & Disruptive',
+      colors: 'Vibrant Orange + Dark + White',
+      font: 'Trebuchet MS, sans-serif',
+      best_for: ['Startup', 'Entrepreneurship', 'Innovation'],
+    },
+    {
+      name: 'School Spirit',
+      emoji: '🏫',
+      style: 'School Pride',
+      colors: 'Blue + White + Yellow',
+      font: 'Georgia, serif',
+      best_for: ['School', 'Training', 'Workshop'],
+    },
+    {
+      name: 'Chalkboard',
+      emoji: '✏️',
+      style: 'Educational & Playful',
+      colors: 'Chalkboard Green + White Chalk',
+      font: 'Courier New, monospace',
+      best_for: ['Education', 'Teaching', 'Workshop'],
+    },
+    {
+      name: 'Medical Blue',
+      emoji: '🏥',
+      style: 'Clinical & Trusted',
+      colors: 'Medical Blue + White + Clean Grey',
+      font: 'Verdana, sans-serif',
+      best_for: ['Medicine', 'Healthcare', 'Nursing'],
+    },
+    {
+      name: 'Science Lab',
+      emoji: '🔬',
+      style: 'Scientific & Precise',
+      colors: 'Lab White + Deep Blue + Green Signal',
+      font: 'Courier New, monospace',
+      best_for: ['Chemistry', 'Biology', 'Physics'],
+    },
+    {
+      name: 'Astronomy Dark',
+      emoji: '🌌',
+      style: 'Cosmic & Deep',
+      colors: 'Space Black + Starlight + Deep Purple',
+      font: 'Georgia, serif',
+      best_for: ['Astronomy', 'Physics', 'Space'],
+    },
+    {
+      name: 'Harvard Crimson',
+      emoji: '📖',
+      style: 'Ivy League Prestige',
+      colors: 'Harvard Crimson + Black + Gold',
+      font: 'Garamond, serif',
+      best_for: ['Academic', 'Research', 'Degree'],
+    },
+    {
+      name: 'Rose Gold',
+      emoji: '💎',
+      style: 'Premium & Feminine',
+      colors: 'Rose Gold + Blush + Champagne',
+      font: 'Georgia, serif',
+      best_for: ['Award', 'Excellence', 'Fashion'],
+    },
+    {
+      name: 'Holographic',
+      emoji: '🌈',
+      style: 'Futuristic & Iridescent',
+      colors: 'Holographic Gradient + White',
+      font: 'Century Gothic, sans-serif',
+      best_for: ['Innovation', 'Technology', 'Design'],
+    },
+    {
+      name: 'Blueprint',
+      emoji: '📐',
+      style: 'Architectural & Technical',
+      colors: 'Blueprint Blue + White Lines',
+      font: 'Courier New, monospace',
+      best_for: ['Architecture', 'Engineering', 'Design'],
+    },
+    {
+      name: 'Saffron India',
+      emoji: '🇮🇳',
+      style: 'Vibrant & Cultural',
+      colors: 'Saffron + White + India Green',
+      font: 'Georgia, serif',
+      best_for: ['India', 'Culture', 'Government'],
+    },
+    {
+      name: 'Zen Lotus',
+      emoji: '🧘',
+      style: 'Calm & Mindful',
+      colors: 'Soft Lavender + White + Sage',
+      font: 'Garamond, serif',
+      best_for: ['Yoga', 'Meditation', 'Wellness'],
+    },
+    {
+      name: 'Jazz Noir',
+      emoji: '🎷',
+      style: 'Jazz & Cool',
+      colors: 'Noir Black + Warm Amber + Cream',
+      font: 'Georgia, serif',
+      best_for: ['Music', 'Jazz', 'Arts'],
+    },
   ];
 }
 
@@ -526,7 +857,12 @@ async function suggestDesign(data) {
   const aiProvider = require('../../services/aiProviderService');
   const templates = getDesignTemplates();
 
-  const templateList = templates.map(t => `${t.name} (${t.emoji}) - ${t.style} - Best for: ${t.best_for.join(', ')}`).join('\n');
+  const templateList = templates
+    .map(
+      (t) =>
+        `${t.name} (${t.emoji}) - ${t.style} - Best for: ${t.best_for.join(', ')}`
+    )
+    .join('\n');
 
   const prompt = `Given a ${data.certificate_type} certificate for ${data.industry} industry with ${data.style} style and ${data.tone} tone for ${data.audience} audience:
 
@@ -538,20 +874,38 @@ Return a JSON object with key "recommendations" containing an array of objects w
 
   try {
     const result = await aiProvider.generate(prompt);
-    const cleanText = result.replace(/```json/g, '').replace(/```/g, '').trim();
+    const cleanText = result
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .trim();
     return JSON.parse(cleanText);
   } catch {
     // Fallback: rule-based matching
-    const scored = templates.map(t => {
-      let score = 0;
-      if (t.best_for.some(bf => bf.toLowerCase().includes(data.industry?.toLowerCase() || ''))) score += 3;
-      if (t.style.toLowerCase().includes(data.style?.toLowerCase() || '')) score += 2;
-      if (t.best_for.some(bf => bf.toLowerCase().includes(data.certificate_type?.toLowerCase() || ''))) score += 2;
-      return { ...t, score };
-    }).sort((a, b) => b.score - a.score);
+    const scored = templates
+      .map((t) => {
+        let score = 0;
+        if (
+          t.best_for.some((bf) =>
+            bf.toLowerCase().includes(data.industry?.toLowerCase() || '')
+          )
+        )
+          score += 3;
+        if (t.style.toLowerCase().includes(data.style?.toLowerCase() || ''))
+          score += 2;
+        if (
+          t.best_for.some((bf) =>
+            bf
+              .toLowerCase()
+              .includes(data.certificate_type?.toLowerCase() || '')
+          )
+        )
+          score += 2;
+        return { ...t, score };
+      })
+      .sort((a, b) => b.score - a.score);
 
     return {
-      recommendations: scored.slice(0, 3).map(t => ({
+      recommendations: scored.slice(0, 3).map((t) => ({
         name: t.name,
         emoji: t.emoji,
         style: t.style,
@@ -570,19 +924,70 @@ Return a JSON object with key "recommendations" containing an array of objects w
 
 function renderCertificatePreview(data) {
   const TEMPLATE_STYLES = {
-    'Royal Gold': { bg: '#0d1b4b', fg: '#FFD700', border: '8px double #FFD700', font: 'Georgia, serif' },
-    'Ivory Scroll': { bg: '#f5f0e8', fg: '#3d2b1f', border: '6px solid #8b6914', font: 'Palatino Linotype, serif' },
-    'Oxford Blue': { bg: '#002147', fg: '#f5f0e0', border: '6px solid #c0c0c0', font: 'Book Antiqua, serif' },
-    'Modern Minimal': { bg: '#ffffff', fg: '#212121', border: '2px solid #1565c0', font: 'Trebuchet MS, sans-serif' },
-    'Tech Dark': { bg: '#0a0e1a', fg: '#00e5ff', border: '2px solid #00e5ff', font: 'Courier New, monospace' },
-    'AI Blue': { bg: '#050d1e', fg: '#4fc3f7', border: '2px solid #0288d1', font: 'Verdana, sans-serif' },
-    'Floral Pastel': { bg: '#fce4ec', fg: '#6a1b9a', border: '5px solid #ce93d8', font: 'Palatino Linotype, serif' },
-    'Classic Red': { bg: '#fff3f3', fg: '#b71c1c', border: '6px double #c62828', font: 'Times New Roman, serif' },
-    'Harvard Crimson': { bg: '#f8f0f0', fg: '#1a0000', border: '5px solid #a51c30', font: 'Garamond, serif' },
-    'Saffron India': { bg: '#fff8e1', fg: '#e65100', border: '5px solid #ff6f00', font: 'Georgia, serif' },
+    'Royal Gold': {
+      bg: '#0d1b4b',
+      fg: '#FFD700',
+      border: '8px double #FFD700',
+      font: 'Georgia, serif',
+    },
+    'Ivory Scroll': {
+      bg: '#f5f0e8',
+      fg: '#3d2b1f',
+      border: '6px solid #8b6914',
+      font: 'Palatino Linotype, serif',
+    },
+    'Oxford Blue': {
+      bg: '#002147',
+      fg: '#f5f0e0',
+      border: '6px solid #c0c0c0',
+      font: 'Book Antiqua, serif',
+    },
+    'Modern Minimal': {
+      bg: '#ffffff',
+      fg: '#212121',
+      border: '2px solid #1565c0',
+      font: 'Trebuchet MS, sans-serif',
+    },
+    'Tech Dark': {
+      bg: '#0a0e1a',
+      fg: '#00e5ff',
+      border: '2px solid #00e5ff',
+      font: 'Courier New, monospace',
+    },
+    'AI Blue': {
+      bg: '#050d1e',
+      fg: '#4fc3f7',
+      border: '2px solid #0288d1',
+      font: 'Verdana, sans-serif',
+    },
+    'Floral Pastel': {
+      bg: '#fce4ec',
+      fg: '#6a1b9a',
+      border: '5px solid #ce93d8',
+      font: 'Palatino Linotype, serif',
+    },
+    'Classic Red': {
+      bg: '#fff3f3',
+      fg: '#b71c1c',
+      border: '6px double #c62828',
+      font: 'Times New Roman, serif',
+    },
+    'Harvard Crimson': {
+      bg: '#f8f0f0',
+      fg: '#1a0000',
+      border: '5px solid #a51c30',
+      font: 'Garamond, serif',
+    },
+    'Saffron India': {
+      bg: '#fff8e1',
+      fg: '#e65100',
+      border: '5px solid #ff6f00',
+      font: 'Georgia, serif',
+    },
   };
 
-  const style = TEMPLATE_STYLES[data.template_name] || TEMPLATE_STYLES['Modern Minimal'];
+  const style =
+    TEMPLATE_STYLES[data.template_name] || TEMPLATE_STYLES['Modern Minimal'];
 
   const html = `<!DOCTYPE html>
 <html>

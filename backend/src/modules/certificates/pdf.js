@@ -8,11 +8,13 @@ const CERT_HEIGHT = 595; // A4 landscape height in points
 const BORDER_STYLES = {
   'double-gold': (doc, accent) => {
     doc.save();
-    doc.rect(20, 20, CERT_WIDTH - 40, CERT_HEIGHT - 40)
+    doc
+      .rect(20, 20, CERT_WIDTH - 40, CERT_HEIGHT - 40)
       .lineWidth(3)
       .strokeColor(accent)
       .stroke();
-    doc.rect(30, 30, CERT_WIDTH - 60, CERT_HEIGHT - 60)
+    doc
+      .rect(30, 30, CERT_WIDTH - 60, CERT_HEIGHT - 60)
       .lineWidth(1)
       .strokeColor(accent)
       .stroke();
@@ -28,7 +30,8 @@ const BORDER_STYLES = {
   },
   'thin-script': (doc, accent) => {
     doc.save();
-    doc.rect(40, 40, CERT_WIDTH - 80, CERT_HEIGHT - 80)
+    doc
+      .rect(40, 40, CERT_WIDTH - 80, CERT_HEIGHT - 80)
       .lineWidth(0.5)
       .strokeColor(accent)
       .stroke();
@@ -76,7 +79,8 @@ function generateCertificatePDF(data, templateData = {}) {
 
       // Certificate Type / Header
       doc.save();
-      doc.font('Helvetica-Bold')
+      doc
+        .font('Helvetica-Bold')
         .fontSize(32)
         .fillColor(accent)
         .text(title.toUpperCase(), 0, 120, {
@@ -87,7 +91,8 @@ function generateCertificatePDF(data, templateData = {}) {
 
       // Decorative line
       doc.save();
-      doc.moveTo(CERT_WIDTH / 2 - 150, 170)
+      doc
+        .moveTo(CERT_WIDTH / 2 - 150, 170)
         .lineTo(CERT_WIDTH / 2 + 150, 170)
         .lineWidth(2)
         .strokeColor(accent)
@@ -96,7 +101,8 @@ function generateCertificatePDF(data, templateData = {}) {
 
       // "This is to certify that"
       doc.save();
-      doc.font('Helvetica')
+      doc
+        .font('Helvetica')
         .fontSize(16)
         .fillColor(textColor)
         .text('This is to certify that', 0, 200, {
@@ -107,7 +113,8 @@ function generateCertificatePDF(data, templateData = {}) {
 
       // Recipient name
       doc.save();
-      doc.font('Helvetica-Bold')
+      doc
+        .font('Helvetica-Bold')
         .fontSize(28)
         .fillColor(accent)
         .text(recipientName, 0, 240, {
@@ -120,7 +127,8 @@ function generateCertificatePDF(data, templateData = {}) {
       const nameWidth = doc.widthOfString(recipientName);
       const nameX = (CERT_WIDTH - nameWidth) / 2;
       doc.save();
-      doc.moveTo(nameX, 275)
+      doc
+        .moveTo(nameX, 275)
         .lineTo(nameX + nameWidth, 275)
         .lineWidth(1)
         .strokeColor(accent)
@@ -130,7 +138,8 @@ function generateCertificatePDF(data, templateData = {}) {
       // Body text
       if (body) {
         doc.save();
-        doc.font('Helvetica')
+        doc
+          .font('Helvetica')
           .fontSize(14)
           .fillColor(textColor)
           .text(body, 100, 295, {
@@ -142,16 +151,15 @@ function generateCertificatePDF(data, templateData = {}) {
 
       // Issuer and Date
       doc.save();
-      doc.font('Helvetica')
-        .fontSize(12)
-        .fillColor(textColor);
+      doc.font('Helvetica').fontSize(12).fillColor(textColor);
 
       // Issuer line
       doc.text(issuer, 100, CERT_HEIGHT - 120, {
         align: 'center',
         width: 250,
       });
-      doc.font('Helvetica-Bold')
+      doc
+        .font('Helvetica-Bold')
         .fontSize(10)
         .text('Issued By', 100, CERT_HEIGHT - 140, {
           align: 'center',
@@ -159,13 +167,15 @@ function generateCertificatePDF(data, templateData = {}) {
         });
 
       // Date
-      doc.font('Helvetica')
+      doc
+        .font('Helvetica')
         .fontSize(12)
         .text(issueDate, CERT_WIDTH - 350, CERT_HEIGHT - 120, {
           align: 'center',
           width: 250,
         });
-      doc.font('Helvetica-Bold')
+      doc
+        .font('Helvetica-Bold')
         .fontSize(10)
         .text('Date of Issue', CERT_WIDTH - 350, CERT_HEIGHT - 140, {
           align: 'center',
@@ -175,7 +185,8 @@ function generateCertificatePDF(data, templateData = {}) {
 
       // Signature line
       doc.save();
-      doc.moveTo(150, CERT_HEIGHT - 90)
+      doc
+        .moveTo(150, CERT_HEIGHT - 90)
         .lineTo(350, CERT_HEIGHT - 90)
         .lineWidth(0.5)
         .strokeColor(textColor)
@@ -184,7 +195,8 @@ function generateCertificatePDF(data, templateData = {}) {
 
       // Date line
       doc.save();
-      doc.moveTo(CERT_WIDTH - 350, CERT_HEIGHT - 90)
+      doc
+        .moveTo(CERT_WIDTH - 350, CERT_HEIGHT - 90)
         .lineTo(CERT_WIDTH - 150, CERT_HEIGHT - 90)
         .lineWidth(0.5)
         .strokeColor(textColor)
@@ -194,7 +206,8 @@ function generateCertificatePDF(data, templateData = {}) {
       // Certificate number (if provided)
       if (certificateNumber) {
         doc.save();
-        doc.font('Helvetica')
+        doc
+          .font('Helvetica')
           .fontSize(9)
           .fillColor(textColor)
           .text(`Certificate No: ${certificateNumber}`, 0, CERT_HEIGHT - 35, {

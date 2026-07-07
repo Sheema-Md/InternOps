@@ -1,7 +1,8 @@
 const DEFAULT_TEMPLATES = [
   {
     name: 'Classic Gold',
-    description: 'Traditional gold-bordered certificate with elegant typography',
+    description:
+      'Traditional gold-bordered certificate with elegant typography',
     template_data: {
       background: '#FFFFFF',
       accent: '#b8860b',

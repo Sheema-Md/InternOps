@@ -18,10 +18,7 @@ async function generateQRCode(text, options = {}) {
 }
 
 async function generateQRCodeDataURL(text, options = {}) {
-  const {
-    width = 300,
-    margin = 2,
-  } = options;
+  const { width = 300, margin = 2 } = options;
 
   const dataURL = await QRCode.toDataURL(text, {
     width,

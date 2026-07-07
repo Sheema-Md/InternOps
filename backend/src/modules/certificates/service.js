@@ -5,7 +5,14 @@ const { DEFAULT_TEMPLATES } = require('./templates');
 const path = require('path');
 const fs = require('fs');
 
-const UPLOAD_DIR = path.join(__dirname, '..', '..', '..', 'uploads', 'certificates');
+const UPLOAD_DIR = path.join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'uploads',
+  'certificates'
+);
 
 // Ensure upload directory exists
 if (!fs.existsSync(UPLOAD_DIR)) {
@@ -51,18 +58,25 @@ async function deleteTemplate(id) {
 // ============================================================
 
 async function generateCertificate(data, userId) {
-  const template = data.template_id ? await repo.getTemplateById(data.template_id) : null;
+  const template = data.template_id
+    ? await repo.getTemplateById(data.template_id)
+    : null;
   const templateData = template ? template.template_data : {};
 
   // Generate PDF
-  const pdfBuffer = await generateCertificatePDF({
-    recipientName: data.recipient_name,
-    title: data.title,
-    body: data.body || `This is to certify that ${data.recipient_name} has successfully completed ${data.title}`,
-    issuer: data.issuer || 'InternOps',
-    issueDate: data.issue_date || new Date().toISOString().slice(0, 10),
-    certificateType: data.certificate_type,
-  }, templateData);
+  const pdfBuffer = await generateCertificatePDF(
+    {
+      recipientName: data.recipient_name,
+      title: data.title,
+      body:
+        data.body ||
+        `This is to certify that ${data.recipient_name} has successfully completed ${data.title}`,
+      issuer: data.issuer || 'InternOps',
+      issueDate: data.issue_date || new Date().toISOString().slice(0, 10),
+      certificateType: data.certificate_type,
+    },
+    templateData
+  );
 
   // Generate QR code for verification
   const verifyUrl = `${process.env.APP_URL || 'http://localhost:5173'}/verify/certificate`;
@@ -74,12 +88,15 @@ async function generateCertificate(data, userId) {
   fs.writeFileSync(filePath, pdfBuffer);
 
   // Save to database
-  const cert = await repo.createCertificate({
-    ...data,
-    status: 'generated',
-    pdf_path: filename,
-    qr_code_url: qrCodeUrl,
-  }, userId);
+  const cert = await repo.createCertificate(
+    {
+      ...data,
+      status: 'generated',
+      pdf_path: filename,
+      qr_code_url: qrCodeUrl,
+    },
+    userId
+  );
 
   return {
     success: true,
@@ -130,29 +147,35 @@ async function deleteCertificate(id) {
 // ============================================================
 
 async function startBulkGeneration(data, userId) {
-  const job = await repo.createBulkJob({
-    template_id: data.template_id,
-    total_count: data.certificates.length,
-    send_email: data.send_email,
-    email_subject: data.email_subject,
-    email_body: data.email_body,
-  }, userId);
+  const job = await repo.createBulkJob(
+    {
+      template_id: data.template_id,
+      total_count: data.certificates.length,
+      send_email: data.send_email,
+      email_subject: data.email_subject,
+      email_body: data.email_body,
+    },
+    userId
+  );
 
   // Process certificates synchronously for now (can be made async with a job queue)
   const results = { generated: 0, failed: 0, errors: [] };
 
   for (const certData of data.certificates) {
     try {
-      const cert = await generateCertificate({
-        template_id: data.template_id,
-        recipient_name: certData.recipient_name,
-        recipient_email: certData.recipient_email,
-        title: certData.title || 'Certificate of Achievement',
-        body: certData.body,
-        issuer: certData.issuer,
-        certificate_type: certData.certificate_type || 'achievement',
-        metadata: certData.metadata,
-      }, userId);
+      const cert = await generateCertificate(
+        {
+          template_id: data.template_id,
+          recipient_name: certData.recipient_name,
+          recipient_email: certData.recipient_email,
+          title: certData.title || 'Certificate of Achievement',
+          body: certData.body,
+          issuer: certData.issuer,
+          certificate_type: certData.certificate_type || 'achievement',
+          metadata: certData.metadata,
+        },
+        userId
+      );
 
       await repo.createBulkJobItem({
         bulk_job_id: job.id,
@@ -273,7 +296,10 @@ async function quickGenerate(data, userId) {
   const pool = require('../../config/db');
 
   // 1. Auto-generate certificate number: CERT/DOMAIN/YYYY/NNNN
-  const domainCode = (data.domain || 'GEN').replace(/[^a-zA-Z]/g, '').substring(0, 4).toUpperCase();
+  const domainCode = (data.domain || 'GEN')
+    .replace(/[^a-zA-Z]/g, '')
+    .substring(0, 4)
+    .toUpperCase();
   const year = new Date().getFullYear();
   const countResult = await pool.query(
     `SELECT COUNT(*) as cnt FROM certificates WHERE EXTRACT(YEAR FROM created_at) = $1`,
@@ -283,7 +309,9 @@ async function quickGenerate(data, userId) {
   const certificateNumber = `CERT/${domainCode}/${year}/${seq}`;
 
   // 2. Get template styling
-  const template = data.template_id ? await repo.getTemplateById(data.template_id) : null;
+  const template = data.template_id
+    ? await repo.getTemplateById(data.template_id)
+    : null;
   const templateData = template ? template.template_data : {};
 
   // 3. Build body text
@@ -292,15 +320,18 @@ async function quickGenerate(data, userId) {
   const body = `This is to certify that ${data.recipient_name} has successfully completed a ${data.domain} internship from ${startFormatted} to ${endFormatted}. The individual demonstrated excellent performance, dedication, and strong professional skills throughout the duration of the program.`;
 
   // 4. Generate PDF
-  const pdfBuffer = await generateCertificatePDF({
-    recipientName: data.recipient_name,
-    title: `Certificate of ${data.domain} Internship`,
-    body,
-    issuer: data.issuer || 'InternOps',
-    issueDate: new Date().toISOString().slice(0, 10),
-    certificateType: 'internship',
-    certificateNumber,
-  }, templateData);
+  const pdfBuffer = await generateCertificatePDF(
+    {
+      recipientName: data.recipient_name,
+      title: `Certificate of ${data.domain} Internship`,
+      body,
+      issuer: data.issuer || 'InternOps',
+      issueDate: new Date().toISOString().slice(0, 10),
+      certificateType: 'internship',
+      certificateNumber,
+    },
+    templateData
+  );
 
   // 5. Generate QR code
   const verifyUrl = `${process.env.APP_URL || 'http://localhost:5173'}/verify/certificate`;
@@ -312,25 +343,28 @@ async function quickGenerate(data, userId) {
   fs.writeFileSync(filePath, pdfBuffer);
 
   // 7. Save to database
-  const cert = await repo.createCertificate({
-    template_id: data.template_id || null,
-    recipient_name: data.recipient_name,
-    title: `Certificate of ${data.domain} Internship`,
-    body,
-    issuer: data.issuer || 'InternOps',
-    issue_date: new Date().toISOString().slice(0, 10),
-    certificate_type: 'internship',
-    status: 'generated',
-    pdf_path: filename,
-    qr_code_url: qrCodeUrl,
-    metadata: {
-      certificate_number: certificateNumber,
-      domain: data.domain,
-      start_date: data.start_date,
-      end_date: data.end_date,
-      auto_generated: true,
+  const cert = await repo.createCertificate(
+    {
+      template_id: data.template_id || null,
+      recipient_name: data.recipient_name,
+      title: `Certificate of ${data.domain} Internship`,
+      body,
+      issuer: data.issuer || 'InternOps',
+      issue_date: new Date().toISOString().slice(0, 10),
+      certificate_type: 'internship',
+      status: 'generated',
+      pdf_path: filename,
+      qr_code_url: qrCodeUrl,
+      metadata: {
+        certificate_number: certificateNumber,
+        domain: data.domain,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        auto_generated: true,
+      },
     },
-  }, userId);
+    userId
+  );
 
   return {
     success: true,
@@ -347,8 +381,20 @@ async function quickGenerate(data, userId) {
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
-  const months = ['January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'];
+  const months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
   return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 

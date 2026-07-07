@@ -8,7 +8,9 @@ function getCanvaConfig() {
   return {
     clientId: process.env.CANVA_CLIENT_ID,
     clientSecret: process.env.CANVA_CLIENT_SECRET,
-    redirectUri: process.env.CANVA_REDIRECT_URI || `${process.env.APP_URL || 'http://localhost:5173'}/admin/canva-templates/callback`,
+    redirectUri:
+      process.env.CANVA_REDIRECT_URI ||
+      `${process.env.APP_URL || 'http://localhost:5173'}/admin/canva-templates/callback`,
   };
 }
 
@@ -20,7 +22,8 @@ function getAuthUrl(state) {
     client_id: config.clientId,
     redirect_uri: config.redirectUri,
     response_type: 'code',
-    scope: 'design:content:read design:content:write design:meta:read brand:read',
+    scope:
+      'design:content:read design:content:write design:meta:read brand:read',
     state: state || 'internops',
   });
 
@@ -46,7 +49,9 @@ async function exchangeCodeForToken(code) {
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.error_description || 'Failed to exchange code for token');
+    throw new Error(
+      error.error_description || 'Failed to exchange code for token'
+    );
   }
 
   return response.json();
@@ -80,7 +85,10 @@ async function getValidToken() {
   if (!settings) return null;
 
   // Check if token is expired (with 5 min buffer)
-  if (settings.token_expires_at && new Date(settings.token_expires_at) > new Date(Date.now() + 300000)) {
+  if (
+    settings.token_expires_at &&
+    new Date(settings.token_expires_at) > new Date(Date.now() + 300000)
+  ) {
     return settings.access_token;
   }
 
@@ -88,12 +96,17 @@ async function getValidToken() {
   if (settings.refresh_token) {
     try {
       const tokens = await refreshAccessToken(settings.refresh_token);
-      await repo.saveCanvaSettings({
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token || settings.refresh_token,
-        token_expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-        organization_id: settings.organization_id,
-      }, settings.created_by);
+      await repo.saveCanvaSettings(
+        {
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token || settings.refresh_token,
+          token_expires_at: new Date(
+            Date.now() + tokens.expires_in * 1000
+          ).toISOString(),
+          organization_id: settings.organization_id,
+        },
+        settings.created_by
+      );
       return tokens.access_token;
     } catch {
       return null;
@@ -136,17 +149,20 @@ async function getDesign(designId) {
 async function importDesignAsTemplate(designId, userId) {
   const design = await getDesign(designId);
 
-  const template = await repo.createTemplate({
-    name: design.title || `Imported from Canva - ${designId}`,
-    description: `Imported from Canva design: ${designId}`,
-    template_data: {
+  const template = await repo.createTemplate(
+    {
+      name: design.title || `Imported from Canva - ${designId}`,
+      description: `Imported from Canva design: ${designId}`,
+      template_data: {
+        canva_design_id: designId,
+        canva_pages: design.pages || [],
+        background: '#FFFFFF',
+        accent: '#000000',
+      },
       canva_design_id: designId,
-      canva_pages: design.pages || [],
-      background: '#FFFFFF',
-      accent: '#000000',
     },
-    canva_design_id: designId,
-  }, userId);
+    userId
+  );
 
   return template;
 }

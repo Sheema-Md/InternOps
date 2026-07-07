@@ -1,7 +1,19 @@
 import { useState, useCallback } from 'react';
 import { PageHeader, Card, Badge, Spinner } from '../../components/ui';
-import { useBulkGenerate, useTemplates, useBulkJobStatus } from '../../hooks/useCertificates';
-import { Upload, Plus, Trash2, FileText, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import {
+  useBulkGenerate,
+  useTemplates,
+  useBulkJobStatus,
+} from '../../hooks/useCertificates';
+import {
+  Upload,
+  Plus,
+  Trash2,
+  FileText,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+} from 'lucide-react';
 
 const BulkGenerate = () => {
   const [step, setStep] = useState(1);
@@ -20,40 +32,52 @@ const BulkGenerate = () => {
     const lines = text.trim().split('\n');
     if (lines.length < 2) return [];
 
-    const headers = lines[0].toLowerCase().split(',').map(h => h.trim());
-    const nameIdx = headers.findIndex(h => h === 'name');
-    const emailIdx = headers.findIndex(h => h === 'email');
-    const titleIdx = headers.findIndex(h => h === 'title');
-    const achievementIdx = headers.findIndex(h => h === 'achievement');
+    const headers = lines[0]
+      .toLowerCase()
+      .split(',')
+      .map((h) => h.trim());
+    const nameIdx = headers.findIndex((h) => h === 'name');
+    const emailIdx = headers.findIndex((h) => h === 'email');
+    const titleIdx = headers.findIndex((h) => h === 'title');
+    const achievementIdx = headers.findIndex((h) => h === 'achievement');
 
     if (nameIdx === -1 || emailIdx === -1) return [];
 
-    return lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim());
-      return {
-        name: values[nameIdx] || '',
-        email: values[emailIdx] || '',
-        title: values[titleIdx] || '',
-        achievement: values[achievementIdx] || ''
-      };
-    }).filter(r => r.name && r.email);
+    return lines
+      .slice(1)
+      .map((line) => {
+        const values = line.split(',').map((v) => v.trim());
+        return {
+          name: values[nameIdx] || '',
+          email: values[emailIdx] || '',
+          title: values[titleIdx] || '',
+          achievement: values[achievementIdx] || '',
+        };
+      })
+      .filter((r) => r.name && r.email);
   }, []);
 
-  const handleCsvUpload = useCallback((e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const handleCsvUpload = useCallback(
+    (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
 
-    setCsvFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const parsed = parseCsv(event.target.result);
-      setRecipients(parsed);
-    };
-    reader.readAsText(file);
-  }, [parseCsv]);
+      setCsvFileName(file.name);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const parsed = parseCsv(event.target.result);
+        setRecipients(parsed);
+      };
+      reader.readAsText(file);
+    },
+    [parseCsv]
+  );
 
   const addRow = () => {
-    setRecipients([...recipients, { name: '', email: '', title: '', achievement: '' }]);
+    setRecipients([
+      ...recipients,
+      { name: '', email: '', title: '', achievement: '' },
+    ]);
   };
 
   const removeRow = (index) => {
@@ -70,7 +94,7 @@ const BulkGenerate = () => {
     try {
       const result = await bulkGenerateMutation.mutateAsync({
         template_id: selectedTemplate,
-        certificates: recipients.map(r => ({
+        certificates: recipients.map((r) => ({
           recipient_name: r.name,
           recipient_email: r.email,
           title: r.title || 'Certificate of Achievement',
@@ -84,7 +108,11 @@ const BulkGenerate = () => {
     }
   };
 
-  const progress = jobStatus ? Math.round(((jobStatus.completed_count || 0) / (jobStatus.total_count || 1)) * 100) : 0;
+  const progress = jobStatus
+    ? Math.round(
+        ((jobStatus.completed_count || 0) / (jobStatus.total_count || 1)) * 100
+      )
+    : 0;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -233,7 +261,9 @@ const BulkGenerate = () => {
                         <input
                           type="text"
                           value={recipient.name}
-                          onChange={(e) => updateRow(index, 'name', e.target.value)}
+                          onChange={(e) =>
+                            updateRow(index, 'name', e.target.value)
+                          }
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500"
                           placeholder="John Doe"
                         />
@@ -242,7 +272,9 @@ const BulkGenerate = () => {
                         <input
                           type="email"
                           value={recipient.email}
-                          onChange={(e) => updateRow(index, 'email', e.target.value)}
+                          onChange={(e) =>
+                            updateRow(index, 'email', e.target.value)
+                          }
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500"
                           placeholder="john@example.com"
                         />
@@ -251,7 +283,9 @@ const BulkGenerate = () => {
                         <input
                           type="text"
                           value={recipient.title}
-                          onChange={(e) => updateRow(index, 'title', e.target.value)}
+                          onChange={(e) =>
+                            updateRow(index, 'title', e.target.value)
+                          }
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500"
                           placeholder="Software Engineer"
                         />
@@ -260,7 +294,9 @@ const BulkGenerate = () => {
                         <input
                           type="text"
                           value={recipient.achievement}
-                          onChange={(e) => updateRow(index, 'achievement', e.target.value)}
+                          onChange={(e) =>
+                            updateRow(index, 'achievement', e.target.value)
+                          }
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500"
                           placeholder="Completed Training"
                         />
@@ -288,7 +324,8 @@ const BulkGenerate = () => {
                 Add Row
               </button>
               <span className="text-sm text-gray-500">
-                {recipients.length} recipient{recipients.length !== 1 ? 's' : ''} added
+                {recipients.length} recipient
+                {recipients.length !== 1 ? 's' : ''} added
               </span>
             </div>
 
@@ -322,13 +359,15 @@ const BulkGenerate = () => {
                 <div>
                   <p className="text-sm text-gray-500">Template</p>
                   <p className="font-medium text-gray-900 dark:text-white">
-                    {templates?.find((t) => t.id === selectedTemplate)?.name || 'Unknown'}
+                    {templates?.find((t) => t.id === selectedTemplate)?.name ||
+                      'Unknown'}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Recipients</p>
                   <p className="font-medium text-gray-900 dark:text-white">
-                    {recipients.length} certificate{recipients.length !== 1 ? 's' : ''}
+                    {recipients.length} certificate
+                    {recipients.length !== 1 ? 's' : ''}
                   </p>
                 </div>
               </div>
@@ -342,9 +381,15 @@ const BulkGenerate = () => {
                 <table className="w-full text-sm">
                   <thead className="sticky top-0 bg-gray-50 dark:bg-gray-800">
                     <tr>
-                      <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">#</th>
-                      <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">Name</th>
-                      <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">Email</th>
+                      <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">
+                        #
+                      </th>
+                      <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">
+                        Name
+                      </th>
+                      <th className="px-4 py-2 text-left text-gray-600 dark:text-gray-400">
+                        Email
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -357,12 +402,17 @@ const BulkGenerate = () => {
                         <td className="px-4 py-2 text-gray-900 dark:text-white">
                           {recipient.name}
                         </td>
-                        <td className="px-4 py-2 text-gray-500">{recipient.email}</td>
+                        <td className="px-4 py-2 text-gray-500">
+                          {recipient.email}
+                        </td>
                       </tr>
                     ))}
                     {recipients.length > 10 && (
                       <tr>
-                        <td colSpan="3" className="px-4 py-2 text-center text-gray-500">
+                        <td
+                          colSpan="3"
+                          className="px-4 py-2 text-center text-gray-500"
+                        >
                           ...and {recipients.length - 10} more
                         </td>
                       </tr>
@@ -430,7 +480,9 @@ const BulkGenerate = () => {
                   <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-5 w-5 text-green-600" />
-                      <span className="text-sm text-green-700 dark:text-green-400">Completed</span>
+                      <span className="text-sm text-green-700 dark:text-green-400">
+                        Completed
+                      </span>
                     </div>
                     <p className="mt-1 text-2xl font-bold text-green-700 dark:text-green-400">
                       {jobStatus.completed_count || 0}
@@ -439,7 +491,9 @@ const BulkGenerate = () => {
                   <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
                     <div className="flex items-center gap-2">
                       <XCircle className="h-5 w-5 text-red-600" />
-                      <span className="text-sm text-red-700 dark:text-red-400">Failed</span>
+                      <span className="text-sm text-red-700 dark:text-red-400">
+                        Failed
+                      </span>
                     </div>
                     <p className="mt-1 text-2xl font-bold text-red-700 dark:text-red-400">
                       {jobStatus.failed_count || 0}
@@ -448,7 +502,9 @@ const BulkGenerate = () => {
                   <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                     <div className="flex items-center gap-2">
                       <AlertCircle className="h-5 w-5 text-blue-600" />
-                      <span className="text-sm text-blue-700 dark:text-blue-400">Total</span>
+                      <span className="text-sm text-blue-700 dark:text-blue-400">
+                        Total
+                      </span>
                     </div>
                     <p className="mt-1 text-2xl font-bold text-blue-700 dark:text-blue-400">
                       {jobStatus.total_count || 0}
@@ -464,8 +520,8 @@ const BulkGenerate = () => {
                       jobStatus.status === 'completed'
                         ? 'success'
                         : jobStatus.status === 'failed'
-                        ? 'error'
-                        : 'info'
+                          ? 'error'
+                          : 'info'
                     }
                   >
                     {jobStatus.status}
@@ -509,7 +565,11 @@ const BulkGenerate = () => {
                               </td>
                               <td className="px-4 py-2">
                                 <Badge
-                                  variant={item.status === 'generated' ? 'success' : 'error'}
+                                  variant={
+                                    item.status === 'generated'
+                                      ? 'success'
+                                      : 'error'
+                                  }
                                 >
                                   {item.status}
                                 </Badge>
@@ -546,7 +606,10 @@ const BulkGenerate = () => {
                           'name,email,certificate_id,status',
                           ...jobStatus.items
                             .filter((r) => r.status === 'generated')
-                            .map((r) => `${r.recipient_name},${r.recipient_email || ''},${r.certificate_id || ''},${r.status}`)
+                            .map(
+                              (r) =>
+                                `${r.recipient_name},${r.recipient_email || ''},${r.certificate_id || ''},${r.status}`
+                            ),
                         ].join('\n');
                         const blob = new Blob([csv], { type: 'text/csv' });
                         const url = URL.createObjectURL(blob);

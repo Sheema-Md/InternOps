@@ -41,18 +41,30 @@ async function sendBulkCertificates({ certificates, subject, body, pdfDir }) {
   for (const cert of certificates) {
     if (!cert.recipient_email) {
       results.failed++;
-      results.errors.push({ name: cert.recipient_name, error: 'No email address' });
+      results.errors.push({
+        name: cert.recipient_name,
+        error: 'No email address',
+      });
       continue;
     }
 
     try {
       const pdfPath = cert.pdf_path ? path.join(pdfDir, cert.pdf_path) : null;
-      const attachments = pdfPath ? [{ filename: `${cert.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`, path: pdfPath }] : [];
+      const attachments = pdfPath
+        ? [
+            {
+              filename: `${cert.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+              path: pdfPath,
+            },
+          ]
+        : [];
 
       await sendCertificateEmail({
         to: cert.recipient_email,
         subject: subject || 'Your Certificate',
-        text: body || `Dear ${cert.recipient_name},\n\nPlease find your certificate attached.\n\nBest regards,\nInternOps Team`,
+        text:
+          body ||
+          `Dear ${cert.recipient_name},\n\nPlease find your certificate attached.\n\nBest regards,\nInternOps Team`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #1e40af;">Certificate of ${cert.certificate_type || 'Achievement'}</h2>
@@ -69,7 +81,11 @@ async function sendBulkCertificates({ certificates, subject, body, pdfDir }) {
       results.sent++;
     } catch (err) {
       results.failed++;
-      results.errors.push({ name: cert.recipient_name, email: cert.recipient_email, error: err.message });
+      results.errors.push({
+        name: cert.recipient_name,
+        email: cert.recipient_email,
+        error: err.message,
+      });
     }
   }
 

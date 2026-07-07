@@ -21,7 +21,10 @@ export function useValidateCertificate() {
 export function useGenerateAchievement() {
   return useMutation({
     mutationFn: async (payload) => {
-      const { data } = await api.post('/ai-certificates/generate-achievement', payload);
+      const { data } = await api.post(
+        '/ai-certificates/generate-achievement',
+        payload
+      );
       return data;
     },
   });
@@ -30,7 +33,10 @@ export function useGenerateAchievement() {
 export function useGenerateContent() {
   return useMutation({
     mutationFn: async (payload) => {
-      const { data } = await api.post('/ai-certificates/generate-content', payload);
+      const { data } = await api.post(
+        '/ai-certificates/generate-content',
+        payload
+      );
       return data;
     },
   });
@@ -43,7 +49,10 @@ export function useGenerateContent() {
 export function useMatchTemplate() {
   return useMutation({
     mutationFn: async (payload) => {
-      const { data } = await api.post('/ai-certificates/match-template', payload);
+      const { data } = await api.post(
+        '/ai-certificates/match-template',
+        payload
+      );
       return data;
     },
   });
@@ -56,7 +65,9 @@ export function useMatchTemplate() {
 export function useRenderCertificatePNG() {
   return useMutation({
     mutationFn: async (params) => {
-      const { data } = await api.get('/ai-certificates/certificate-png', { params });
+      const { data } = await api.get('/ai-certificates/certificate-png', {
+        params,
+      });
       return data;
     },
   });
@@ -83,7 +94,10 @@ export function useBulkAIGenerate() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload) => {
-      const { data } = await api.post('/ai-certificates/bulk-generate', payload);
+      const { data } = await api.post(
+        '/ai-certificates/bulk-generate',
+        payload
+      );
       return data;
     },
     onSuccess: () => {
@@ -110,7 +124,10 @@ export function useBulkAIJobStatus(jobId) {
 export function useToneCustomize() {
   return useMutation({
     mutationFn: async (payload) => {
-      const { data } = await api.post('/ai-certificates/tone-customize', payload);
+      const { data } = await api.post(
+        '/ai-certificates/tone-customize',
+        payload
+      );
       return data;
     },
   });
@@ -133,7 +150,10 @@ export function useAvailableTones() {
 export function useGenerateMultilanguage() {
   return useMutation({
     mutationFn: async (payload) => {
-      const { data } = await api.post('/ai-certificates/generate-multilanguage', payload);
+      const { data } = await api.post(
+        '/ai-certificates/generate-multilanguage',
+        payload
+      );
       return data;
     },
   });
@@ -156,7 +176,10 @@ export function useSupportedLanguages() {
 export function useDesignSuggest() {
   return useMutation({
     mutationFn: async (payload) => {
-      const { data } = await api.post('/ai-certificates/design-suggest', payload);
+      const { data } = await api.post(
+        '/ai-certificates/design-suggest',
+        payload
+      );
       return data;
     },
   });

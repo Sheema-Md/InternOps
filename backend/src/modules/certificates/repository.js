@@ -9,7 +9,14 @@ async function createTemplate(data, userId) {
     `INSERT INTO certificate_templates (name, description, template_data, thumbnail_url, canva_design_id, created_by)
      VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
-    [data.name, data.description || null, JSON.stringify(data.template_data || {}), data.thumbnail_url || null, data.canva_design_id || null, userId]
+    [
+      data.name,
+      data.description || null,
+      JSON.stringify(data.template_data || {}),
+      data.thumbnail_url || null,
+      data.canva_design_id || null,
+      userId,
+    ]
   );
   return res.rows[0];
 }
@@ -55,11 +62,31 @@ async function updateTemplate(id, data) {
   const params = [];
   let idx = 1;
 
-  if (data.name !== undefined) { fields.push(`name = $${idx}`); params.push(data.name); idx++; }
-  if (data.description !== undefined) { fields.push(`description = $${idx}`); params.push(data.description); idx++; }
-  if (data.template_data !== undefined) { fields.push(`template_data = $${idx}`); params.push(JSON.stringify(data.template_data)); idx++; }
-  if (data.thumbnail_url !== undefined) { fields.push(`thumbnail_url = $${idx}`); params.push(data.thumbnail_url); idx++; }
-  if (data.canva_design_id !== undefined) { fields.push(`canva_design_id = $${idx}`); params.push(data.canva_design_id); idx++; }
+  if (data.name !== undefined) {
+    fields.push(`name = $${idx}`);
+    params.push(data.name);
+    idx++;
+  }
+  if (data.description !== undefined) {
+    fields.push(`description = $${idx}`);
+    params.push(data.description);
+    idx++;
+  }
+  if (data.template_data !== undefined) {
+    fields.push(`template_data = $${idx}`);
+    params.push(JSON.stringify(data.template_data));
+    idx++;
+  }
+  if (data.thumbnail_url !== undefined) {
+    fields.push(`thumbnail_url = $${idx}`);
+    params.push(data.thumbnail_url);
+    idx++;
+  }
+  if (data.canva_design_id !== undefined) {
+    fields.push(`canva_design_id = $${idx}`);
+    params.push(data.canva_design_id);
+    idx++;
+  }
 
   if (fields.length === 0) return null;
 
@@ -170,7 +197,21 @@ async function updateCertificate(id, data) {
   const params = [];
   let idx = 1;
 
-  const updatable = ['template_id', 'recipient_name', 'recipient_email', 'title', 'body', 'issuer', 'issue_date', 'expiry_date', 'certificate_type', 'status', 'pdf_path', 'qr_code_url', 'canva_design_id'];
+  const updatable = [
+    'template_id',
+    'recipient_name',
+    'recipient_email',
+    'title',
+    'body',
+    'issuer',
+    'issue_date',
+    'expiry_date',
+    'certificate_type',
+    'status',
+    'pdf_path',
+    'qr_code_url',
+    'canva_design_id',
+  ];
   for (const key of updatable) {
     if (data[key] !== undefined) {
       fields.push(`${key} = $${idx}`);
@@ -227,10 +268,7 @@ async function createBulkJob(data, userId) {
 }
 
 async function getBulkJobById(id) {
-  const res = await pool.query(
-    'SELECT * FROM bulk_jobs WHERE id = $1',
-    [id]
-  );
+  const res = await pool.query('SELECT * FROM bulk_jobs WHERE id = $1', [id]);
   return res.rows[0] || null;
 }
 
@@ -239,11 +277,31 @@ async function updateBulkJob(id, data) {
   const params = [];
   let idx = 1;
 
-  if (data.status !== undefined) { fields.push(`status = $${idx}`); params.push(data.status); idx++; }
-  if (data.completed_count !== undefined) { fields.push(`completed_count = $${idx}`); params.push(data.completed_count); idx++; }
-  if (data.failed_count !== undefined) { fields.push(`failed_count = $${idx}`); params.push(data.failed_count); idx++; }
-  if (data.error_log !== undefined) { fields.push(`error_log = $${idx}`); params.push(JSON.stringify(data.error_log)); idx++; }
-  if (data.completed_at !== undefined) { fields.push(`completed_at = $${idx}`); params.push(data.completed_at); idx++; }
+  if (data.status !== undefined) {
+    fields.push(`status = $${idx}`);
+    params.push(data.status);
+    idx++;
+  }
+  if (data.completed_count !== undefined) {
+    fields.push(`completed_count = $${idx}`);
+    params.push(data.completed_count);
+    idx++;
+  }
+  if (data.failed_count !== undefined) {
+    fields.push(`failed_count = $${idx}`);
+    params.push(data.failed_count);
+    idx++;
+  }
+  if (data.error_log !== undefined) {
+    fields.push(`error_log = $${idx}`);
+    params.push(JSON.stringify(data.error_log));
+    idx++;
+  }
+  if (data.completed_at !== undefined) {
+    fields.push(`completed_at = $${idx}`);
+    params.push(data.completed_at);
+    idx++;
+  }
 
   if (fields.length === 0) return null;
   params.push(id);
@@ -277,9 +335,21 @@ async function updateBulkJobItem(id, data) {
   const params = [];
   let idx = 1;
 
-  if (data.certificate_id !== undefined) { fields.push(`certificate_id = $${idx}`); params.push(data.certificate_id); idx++; }
-  if (data.status !== undefined) { fields.push(`status = $${idx}`); params.push(data.status); idx++; }
-  if (data.error_message !== undefined) { fields.push(`error_message = $${idx}`); params.push(data.error_message); idx++; }
+  if (data.certificate_id !== undefined) {
+    fields.push(`certificate_id = $${idx}`);
+    params.push(data.certificate_id);
+    idx++;
+  }
+  if (data.status !== undefined) {
+    fields.push(`status = $${idx}`);
+    params.push(data.status);
+    idx++;
+  }
+  if (data.error_message !== undefined) {
+    fields.push(`error_message = $${idx}`);
+    params.push(data.error_message);
+    idx++;
+  }
 
   if (fields.length === 0) return null;
   params.push(id);
@@ -316,14 +386,26 @@ async function saveCanvaSettings(data, userId) {
     const res = await pool.query(
       `UPDATE canva_settings SET access_token = $1, refresh_token = $2, token_expires_at = $3, organization_id = $4, updated_at = NOW()
        WHERE id = $5 RETURNING *`,
-      [data.access_token, data.refresh_token, data.token_expires_at, data.organization_id, existing.id]
+      [
+        data.access_token,
+        data.refresh_token,
+        data.token_expires_at,
+        data.organization_id,
+        existing.id,
+      ]
     );
     return res.rows[0];
   }
   const res = await pool.query(
     `INSERT INTO canva_settings (access_token, refresh_token, token_expires_at, organization_id, created_by)
      VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [data.access_token, data.refresh_token, data.token_expires_at, data.organization_id, userId]
+    [
+      data.access_token,
+      data.refresh_token,
+      data.token_expires_at,
+      data.organization_id,
+      userId,
+    ]
   );
   return res.rows[0];
 }
