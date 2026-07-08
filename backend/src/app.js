@@ -325,7 +325,10 @@ const start = async () => {
 
     initializeWebSocket(app.server, app.log);
 
-    app.log.info({ port: config.port }, `Server listening on port ${config.port}`);
+    app.log.info(
+      { port: config.port },
+      `Server listening on port ${config.port}`
+    );
   } catch (err) {
     app.log.error(err);
     process.exit(1);

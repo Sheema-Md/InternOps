@@ -148,7 +148,10 @@ class EmailService {
 
     const transporter = this.getTransporter();
     if (!transporter) {
-      log.info({ to, subject }, 'Email placeholder (no SMTP transporter configured)');
+      log.info(
+        { to, subject },
+        'Email placeholder (no SMTP transporter configured)'
+      );
       metrics.sent++;
       return {
         messageId: 'console-' + Date.now(),
@@ -177,7 +180,12 @@ class EmailService {
       } catch (err) {
         lastError = err;
         log.error(
-          { to, attempt: attempt + 1, maxAttempts: maxRetries + 1, err: err.message },
+          {
+            to,
+            attempt: attempt + 1,
+            maxAttempts: maxRetries + 1,
+            err: err.message,
+          },
           'Email send attempt failed'
         );
         if (err.responseCode >= 500 || /55[0135]/.test(err.message)) {
@@ -189,7 +197,10 @@ class EmailService {
     }
 
     metrics.failed++;
-    log.error({ to, err: lastError?.message }, 'All email send attempts failed');
+    log.error(
+      { to, err: lastError?.message },
+      'All email send attempts failed'
+    );
     throw lastError || new Error(`Failed to send email to ${to}`);
   }
 
