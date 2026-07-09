@@ -112,10 +112,23 @@ export default function App() {
       <div className="relative min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-indigo-50 to-blue-50 dark:from-slate-950 dark:via-indigo-950 dark:to-blue-950 text-slate-800 dark:text-white overflow-hidden animate-fade-in">
         {/* Background Decor Grid */}
         <div className="absolute inset-0 opacity-[0.4] dark:opacity-[0.2] pointer-events-none">
-          <svg className="w-full h-full stroke-slate-900/[0.06] dark:stroke-white/[0.05]" width="100%" height="100%">
+          <svg
+            className="w-full h-full stroke-slate-900/[0.06] dark:stroke-white/[0.05]"
+            width="100%"
+            height="100%"
+          >
             <defs>
-              <pattern id="grid-pattern" width="56" height="100" patternUnits="userSpaceOnUse">
-                <path d="M28 66L0 50V16L28 0l28 16v34L28 66zm0 0v34M0 50l28 16M56 50L28 66M0 16l28 16M56 16L28 32" fill="none" strokeWidth="1" />
+              <pattern
+                id="grid-pattern"
+                width="56"
+                height="100"
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d="M28 66L0 50V16L28 0l28 16v34L28 66zm0 0v34M0 50l28 16M56 50L28 66M0 16l28 16M56 16L28 32"
+                  fill="none"
+                  strokeWidth="1"
+                />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#grid-pattern)" />
