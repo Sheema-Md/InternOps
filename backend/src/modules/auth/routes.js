@@ -313,13 +313,6 @@ async function routes(fastify) {
 
       reply.clearCookie('refreshToken', { path: '/api/auth/refresh' });
 
-      req.auditOnResponse = {
-        userId: req.user.id,
-        action: 'LOGOUT',
-        ipAddress: req.ip,
-        userAgent: req.headers['user-agent'],
-      };
-
       rotateAndSetCsrf(req, reply, null);
       return { message: 'Logged out' };
     }
