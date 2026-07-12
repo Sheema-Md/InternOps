@@ -157,7 +157,8 @@ export default function Ratings() {
                 View Ratings History
               </h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                Select a department and member to check their ratings and average score.
+                Select a department and member to check their ratings and
+                average score.
               </p>
             </div>
           </div>
@@ -172,7 +173,8 @@ export default function Ratings() {
                   Average Rating
                 </div>
                 <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">
-                  avg of {ratings.length} {ratings.length === 1 ? 'rating' : 'ratings'} · out of 10
+                  avg of {ratings.length}{' '}
+                  {ratings.length === 1 ? 'rating' : 'ratings'} · out of 10
                 </div>
               </div>
             </div>
@@ -214,7 +216,9 @@ export default function Ratings() {
             </>
           ) : (
             <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/50 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700">
-              <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Viewing:</span>
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                Viewing:
+              </span>
               <span className="text-sm font-extrabold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1 rounded-full border border-indigo-100 dark:border-indigo-900/50">
                 My ratings
               </span>
@@ -238,7 +242,9 @@ export default function Ratings() {
       {!viewUserId && !isLoading && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-[0_14px_35px_rgba(15,23,42,0.06)] dark:shadow-none p-12 text-center text-slate-500 dark:text-slate-400">
           <Star className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
-          <p className="font-semibold">Select a team member to view their rating history.</p>
+          <p className="font-semibold">
+            Select a team member to view their rating history.
+          </p>
         </div>
       )}
 

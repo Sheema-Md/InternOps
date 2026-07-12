@@ -69,7 +69,10 @@ export default function RatingForm() {
   ];
 
   const memberOptions = [
-    { value: '', label: departmentId ? 'Select member...' : 'Select department first...' },
+    {
+      value: '',
+      label: departmentId ? 'Select member...' : 'Select department first...',
+    },
     ...reports
       .filter((u) => u.department_id === departmentId)
       .map((u) => ({
@@ -144,7 +147,9 @@ export default function RatingForm() {
             value={userId}
             onChange={setUserId}
             options={memberOptions}
-            placeholder={departmentId ? "Select member..." : "Select department first..."}
+            placeholder={
+              departmentId ? 'Select member...' : 'Select department first...'
+            }
             className="w-full"
             disabled={rateMutation.isPending || !departmentId}
             searchable={true}
